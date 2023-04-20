@@ -36,12 +36,23 @@ int main() {
 		cout << "连接服务器成功。。。" << endl;
 	}
 
-	/*3.接收服务器信息 recv*/
-	char rec_buf[256];
-	recv(my_sock, rec_buf, 256, 0);
-	cout << rec_buf << endl;
+	while (true) {
+		char msg_buf[256] = {}, rec_buf[256] = {};
+		cin >> msg_buf;
+		/*3.处理请求*/
+		if (!strcmp(msg_buf, "exit")) {
+			break;
+		}
 
-	/*4.关闭socket closesocket*/
+		/*4.向服务器发送一条消息 send*/
+		send(my_sock, msg_buf, strlen(msg_buf) + 1, 0);
+
+		/*5.接收服务器信息 recv*/
+		recv(my_sock, rec_buf, 256, 0);
+		cout << rec_buf << endl;
+	}
+
+	/*6.关闭socket closesocket*/
 	closesocket(my_sock);
 
 	WSACleanup();
