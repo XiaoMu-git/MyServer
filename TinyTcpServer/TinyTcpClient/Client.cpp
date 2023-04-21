@@ -13,7 +13,6 @@ enum CMD {
 	CMD_ERROR,
 	CMD_TRUE,
 	CMD_FALSE,
-	CMD_COMMAND,
 	CMD_LOGIN,
 	CMD_LOGOUT,
 	CMD_RESPOND
@@ -23,15 +22,6 @@ class DataHeader {
 public:
 	short cmd_type;
 	short data_len;
-};
-
-class Command : public DataHeader {
-public:
-	char cmd[64];
-	Command() {
-		this->cmd_type = CMD_COMMAND;
-		this->data_len = sizeof(Command);
-	}
 };
 
 class Respond : public DataHeader {
@@ -70,7 +60,7 @@ int main() {
 	/*建立一个socket*/
 	SOCKET client_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (client_sock == INVALID_SOCKET) cout << "Socket创建失败" << endl;
-	else cout << "Socket创建失败" << endl;
+	else cout << "Socket创建成功" << endl;
 
 	/*连接服务器*/
 	sockaddr_in client_sockaddr_in;
@@ -82,13 +72,10 @@ int main() {
 
 	while (true) {
 		/*向服务器发送命令*/
-		Command send_cmd;
-		cin >> send_cmd.cmd;
-		if (!strcmp(send_cmd.cmd, "exit")) break;
-		else send(client_sock, (char*)&send_cmd, send_cmd.data_len, 0);
-
-		/*分命令处理*/
-		if (!strcmp(send_cmd.cmd, "login")) {
+		char cmd[128];
+		cin >> cmd;
+		if (!strcmp(cmd, "exit")) break;
+		else if (!strcmp(cmd, "login")) {
 			Login send_login;
 			Respond send_respond;
 			cout << "username：", cin >> send_login.name;
@@ -98,7 +85,7 @@ int main() {
 			if (send_respond.respond == CMD_TRUE) cout << "登陆成功" << endl;
 			else cout << "登陆失败" << endl;
 		}
-		else if (!strcmp(send_cmd.cmd, "logout")) {
+		else if (!strcmp(cmd, "logout")) {
 			Login send_logout;
 			Respond send_respond;
 			cout << "username：", cin >> send_logout.name;

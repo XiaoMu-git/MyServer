@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <WinSock2.h>
 #include <iostream>
+#include <vector>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -13,7 +14,6 @@ enum CMD {
 	CMD_ERROR,
 	CMD_TRUE,
 	CMD_FALSE,
-	CMD_COMMAND,
 	CMD_LOGIN,
 	CMD_LOGOUT,
 	CMD_RESPOND
@@ -23,15 +23,6 @@ class DataHeader {
 public:
 	short cmd_type;
 	short data_len;
-};
-
-class Command : public DataHeader {
-public:
-	char cmd[64];
-	Command() {
-		this->cmd_type = CMD_COMMAND;
-		this->data_len = sizeof(Command);
-	}
 };
 
 class Respond : public DataHeader {
@@ -62,6 +53,40 @@ public:
 	}
 };
 
+bool processor(SOCKET client_sock) {
+	/*接收客户端命令*/
+	char recv_temp[1024];
+	if (recv(client_sock, (char*)&recv_temp, 1024, 0) <= 0) {
+		cout << "客户端:" << client_sock << "断开连接" << endl;
+		return false;
+	}
+
+	/*回复客户端消息*/
+	if (((DataHeader*)recv_temp)->cmd_type == CMD_LOGIN) {
+		cout << "收到客户端" << client_sock << "的CMD_LOGIN类命令" << endl;
+		Login* recv_login = (Login*)recv_temp;
+		Respond send_respond;
+		send_respond.respond = CMD_FALSE;
+		if (!strcmp(recv_login->name, "xiaomu") && !strcmp(recv_login->password, "123456")) {
+			send_respond.respond = CMD_TRUE;
+			send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
+		}
+		else send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
+	}
+
+	else if (((DataHeader*)recv_temp)->cmd_type == CMD_LOGOUT) {
+		Logout* recv_logout = (Logout*)recv_temp;
+		Respond send_respond;
+		send_respond.respond = CMD_FALSE;
+		if (!strcmp(recv_logout->name, "xiaomu")) {
+			send_respond.respond = CMD_TRUE;
+			send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
+		}
+		else send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
+	}
+	return true;
+}
+
 int main() {
 	WORD var = MAKEWORD(2, 2);
 	WSADATA dat;
@@ -84,53 +109,54 @@ int main() {
 	if (listen(server_sock, 5) == SOCKET_ERROR) cout << "端口监听失败" << endl;
 	else cout << "端口监听成功" << endl;
 
-	/*等待接收客户端连接*/
-	sockaddr_in client_sockaddr_in;
-	int client_sockaddr_in_len = sizeof(sockaddr_in);
-	SOCKET client_sock = accept(server_sock, (sockaddr*)&client_sockaddr_in, &client_sockaddr_in_len);
-	if (client_sock == INVALID_SOCKET) cout << "客户端连接失败" << endl;
-	else cout << "客户端连接成功" << endl;
-
+	vector<SOCKET> client_socks;
 	while (true) {
-		/*接收客户端命令*/
-		Command recv_cmd;
-		int recv_len = recv(client_sock, (char*)&recv_cmd, sizeof(Command), 0);
-		if (recv_len <= 0) break;
-		else if (recv_cmd.cmd_type != CMD_COMMAND) continue;
-		cout << "收到客户端的命令：" << recv_cmd.cmd << endl;
+		// 创建三个fd，并初始化
+		fd_set fd_read; FD_ZERO(&fd_read); FD_SET(server_sock, &fd_read);
+		fd_set fd_write; FD_ZERO(&fd_write); FD_SET(server_sock, &fd_write);
+		fd_set fd_except; FD_ZERO(&fd_except); FD_SET(server_sock, &fd_except);
 
-		/*回复客户端消息*/
-		if (!strcmp(recv_cmd.cmd, "login")) {
-			Login recv_login;
-			Respond send_respond;
-			send_respond.respond = CMD_FALSE;
-			recv(client_sock, (char*)&recv_login, recv_login.data_len, 0);
-			if (!strcmp(recv_login.name, "xiaomu") && !strcmp(recv_login.password, "123456")) {
-				send_respond.respond = CMD_TRUE;
-				send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
-			}
-			else send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
+		// 将新连接的客户端加入select
+		for (int i = 0; i < client_socks.size(); i++) {
+			FD_SET(client_socks[i], &fd_read);
 		}
-		else if (!strcmp(recv_cmd.cmd, "logout")) {
-			Logout recv_logout;
-			Respond send_respond;
-			send_respond.respond = CMD_FALSE;
-			recv(client_sock, (char*)&recv_logout, recv_logout.data_len, 0);
-			if (!strcmp(recv_logout.name, "xiaomu")) {
-				send_respond.respond = CMD_TRUE;
-				send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
-			}
-			else send(client_sock, (char*)&send_respond, send_respond.data_len, 0);
-		}
-		else {
 
+		// 启用select
+		int ret = select(server_sock + 1, &fd_read, &fd_write, &fd_except, NULL);
+		if (ret < 0) {
+			cout << "select任务结束" << endl;
+			break;
+		}
+
+		// 如果服务器的sock仍然存在
+		if (FD_ISSET(server_sock, &fd_read)) {
+			// 清理网络标志位
+			FD_CLR(server_sock, &fd_read);
+			/*4.等待接收客户端连接 accept*/
+			sockaddr_in client_sockaddr_in;
+			int client_sockaddr_in_len = sizeof(sockaddr_in);
+			SOCKET client_sock = accept(server_sock, (sockaddr*)&client_sockaddr_in, &client_sockaddr_in_len);
+			if (client_sock == INVALID_SOCKET) cout << "客户端连接失败" << endl;
+			else {
+				cout << "客户端:" << client_sock << "连接成功" << endl;
+				client_socks.push_back(client_sock);
+			}
+		}
+
+		// 清理断连客户端
+		for (int i = 0; i < fd_read.fd_count; i++) {
+			if (!processor(fd_read.fd_array[i])) {
+				auto pos = find(client_socks.begin(), client_socks.end(), fd_read.fd_array[i]);
+				if (pos != client_socks.end()) client_socks.erase(pos);
+			}
 		}
 	}
 
-	cout << "客户端以断开链接" << endl;
 	/*关闭socket*/
-	closesocket(client_sock);
 	closesocket(server_sock);
+	for (int i = 0; i < client_socks.size(); i++) {
+		closesocket(client_socks[i]);
+	}
 
 	WSACleanup();
 	system("pause");
