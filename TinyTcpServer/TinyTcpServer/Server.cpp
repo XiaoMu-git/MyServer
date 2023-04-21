@@ -63,7 +63,7 @@ bool processor(SOCKET client_sock) {
 
 	/*回复客户端消息*/
 	if (((DataHeader*)recv_temp)->cmd_type == CMD_LOGIN) {
-		cout << "收到客户端" << client_sock << "的CMD_LOGIN类命令" << endl;
+		cout << "收到客户端" << client_sock << "的CMD_LOGIN命令" << endl;
 		Login* recv_login = (Login*)recv_temp;
 		Respond send_respond;
 		send_respond.respond = CMD_FALSE;
@@ -75,6 +75,7 @@ bool processor(SOCKET client_sock) {
 	}
 
 	else if (((DataHeader*)recv_temp)->cmd_type == CMD_LOGOUT) {
+		cout << "收到客户端" << client_sock << "的CMD_LOGOUT命令" << endl;
 		Logout* recv_logout = (Logout*)recv_temp;
 		Respond send_respond;
 		send_respond.respond = CMD_FALSE;
@@ -122,7 +123,8 @@ int main() {
 		}
 
 		// 启用select
-		int ret = select(server_sock + 1, &fd_read, &fd_write, &fd_except, NULL);
+		timeval time_val = { 0, 0 };
+		int ret = select(server_sock + 1, &fd_read, &fd_write, &fd_except, &time_val);
 		if (ret < 0) {
 			cout << "select任务结束" << endl;
 			break;

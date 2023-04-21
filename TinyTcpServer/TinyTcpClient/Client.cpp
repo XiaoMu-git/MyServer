@@ -86,7 +86,7 @@ int main() {
 			else cout << "µÇÂ½Ê§°Ü" << endl;
 		}
 		else if (!strcmp(cmd, "logout")) {
-			Login send_logout;
+			Logout send_logout;
 			Respond send_respond;
 			cout << "username£º", cin >> send_logout.name;
 			send(client_sock, (char*)&send_logout, send_logout.data_len, 0);
