@@ -1,119 +1,89 @@
 #include "Client.h"
-#include "DataPackage.h"
 
-Client::Client() {
-	_socket = INVALID_SOCKET;
+EasyTcpClient::EasyTcpClient() {
+	_sock = INVALID_SOCKET;
+	_isConnect = false;
 }
 
-Client::~Client() {
-	doClose();
+EasyTcpClient::~EasyTcpClient() {
+	Close();
 }
 
-// 初始化socket
-bool Client::initSocket() {
-	if (_socket == INVALID_SOCKET) {
+void EasyTcpClient::InitSocket() {
 #ifdef _WIN32
-		/*启动 Windows socket 2.2环境*/
-		WORD ver = MAKEWORD(2, 2);
-		WSADATA dat;
-		WSAStartup(ver, &dat);
-#endif
-		_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		return _socket != INVALID_SOCKET;
+	WORD ver = MAKEWORD(2, 2);
+	WSADATA dat;
+	WSAStartup(ver, &dat);
+#endif // _WIN32
+	if (INVALID_SOCKET != _sock) {
+		printf("<socket=%d关闭旧连接...\n", _sock);
+		Close();
 	}
-	return false;
+	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (INVALID_SOCKET == _sock) {
+		printf("错误，建立Socket失败...\n");
+	}
 }
 
-// 连接服务器
-bool Client::doConnect(const char* ip = "127.0.0.1", int post = 2976) {
-	if (_socket == INVALID_SOCKET) initSocket();
-	_addr.sin_family = AF_INET;
-	_addr.sin_port = htons(post);
+int EasyTcpClient::Connect(const char* ip, unsigned short port) {
+	if (INVALID_SOCKET == _sock) {
+		InitSocket();
+	}
+	sockaddr_in _sin = {};
+	_sin.sin_family = AF_INET;
+	_sin.sin_port = htons(port);
 #ifdef _WIN32
-	_addr.sin_addr.S_un.S_addr = inet_addr(ip);
+	_sin.sin_addr.S_un.S_addr = inet_addr(ip);
 #else
-	_addr.sin_addr.s_addr = inet_addr(ip);
+	_sin.sin_addr.s_addr = inet_addr(ip);
 #endif
-	int res = connect(_socket, (sockaddr*)&_addr, sizeof(_addr));
-	return res != SOCKET_ERROR;
-}
-
-// 接收消息
-bool Client::doRecv() {
-	int res = recv(_socket, _recv, sizeof(Header), 0);
-	if (res <= 0) return false;
-	Header* h_temp = (Header*)_recv;
-	int h_size = sizeof(Header);
-	recv(_socket, _recv + h_size, h_temp->length - h_size, 0);
-}
-
-// 发送消息
-bool Client::doSend() {
-	int res = send(_socket, _recv, sizeof(Header), 0);
-	switch (((Header*)_recv)->cmd_type) {
-	case CMD_MESSAGE: {
-		// 接收message消息
-		recv(_socket, recv_temp + sizeof(Header), recv_header->length - sizeof(Header), 0);
-		Message* recv_message = (Message*)recv_temp;
-		break;
+	int ret = connect(_sock, (sockaddr*)&_sin, sizeof(sockaddr_in));
+	if (SOCKET_ERROR == ret) {
+		printf("<socket=%d>错误，连接服务器<%s:%d>失败...\n", _sock, ip, port);
 	}
-	case CMD_LOGIN: {
-		// 接收他人login消息
-		recv(_socket, recv_temp + sizeof(Header), recv_header->length - sizeof(Header), 0);
-		UserInfo* recv_user_info = (UserInfo*)recv_temp;
-		break;
+	else {
+		_isConnect = true;
 	}
-	case CMD_LOGOUT: {
-		// 接收他人logout消息
-		recv(_socket, recv_temp + sizeof(Header), recv_header->length - sizeof(Header), 0);
-		UserInfo* recv_user_info = (UserInfo*)recv_temp;
-		break;
-	}
-	}
+	return ret;
 }
 
-// 登陆服务器
-bool Client::doLogin() {
-	Response recv_response;
-	_info.cmd_type = CMD_LOGIN;
-	_info.socket = _socket;
-	send(_socket, (char*)&_info, _info.length, 0);
-	recv(_socket, (char*)&recv_response, recv_response.length, 0);
-	if (recv_response.resp == CMD_TREU) return true;
-	else return false;
-}
-
-// 开启服务
-bool Client::doRun(const timeval time_val = { 1, 0 }) {
-	fd_set fd_read; FD_ZERO(&fd_read); FD_SET(_socket, &fd_read);
-	int res = select(_socket + 1, &fd_read, NULL, NULL, &time_val);
-	if (res < 0) return false;
-
-	if (FD_ISSET(_socket, &fd_read)) {
-		FD_CLR(_socket, &fd_read);
-		return dispose();
-	}
-
-	return true;
-}
-
-// 处理消息
-bool Client::dispose() {
-
-
-}
-
-// 关闭socket
-bool Client::doClose() {
-	if (_socket != INVALID_SOCKET) {
+void EasyTcpClient::Close() {
+	if (_sock != INVALID_SOCKET)
+	{
 #ifdef _WIN32
-		closesocket(_socket);
-		/*关闭 Windows socket 2.2环境*/
+		closesocket(_sock);
 		WSACleanup();
 #else
-		close(_socket);
+		close(_sock);
 #endif
-		_socket = INVALID_SOCKET;
+		_sock = INVALID_SOCKET;
 	}
-	return false;
+	_isConnect = false;
+}
+
+bool EasyTcpClient::OnRun() {
+
+}
+
+bool EasyTcpClient::isRun() {
+	return _sock != INVALID_SOCKET && _isConnect;
+}
+
+int EasyTcpClient::RecvData(SOCKET cSock) {
+
+}
+
+void EasyTcpClient::OnNetMsg(DataHeader* header) {
+
+}
+
+int EasyTcpClient::SendData(DataHeader* header, int nLen) {
+	int ret = SOCKET_ERROR;
+	if (isRun() && header) {
+		ret = send(_sock, (const char*)header, nLen, 0);
+		if (SOCKET_ERROR == ret) {
+			Close();
+		}
+	}
+	return ret;
 }

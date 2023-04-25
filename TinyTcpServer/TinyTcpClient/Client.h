@@ -1,43 +1,52 @@
-#ifndef _Client_h_
-#define _Client_h_
+#ifndef _EasyTcpClient_hpp_
+#define _EasyTcpClient_hpp_
+#define RECV_BUFF_SZIE 10240
 
-#include "DataPackage.h"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include<windows.h>
+#include<WinSock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#else
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<string.h>
 
-class Client {
+#define SOCKET int
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define SOCKET_ERROR            (-1)
+#endif
+
+#include <stdio.h>
+#include "DataType.h"
+
+class EasyTcpClient {
 private:
-	SOCKET _socket;
-	sockaddr_in _addr;
-	UserInfo _info;
-	char _recv[4096];
+	SOCKET _sock;
+	bool _isConnect;
+	char _szMsgBuf[RECV_BUFF_SZIE];
+	int _lastPos = 0;
 
 public:
-	Client();
+	EasyTcpClient();
 
-	virtual ~Client();
+	virtual ~EasyTcpClient();
 
-	// 初始化socket
-	bool initSocket();
+	void InitSocket();
 
-	// 连接服务器
-	bool doConnect(const char* ip, int post);
+	int Connect(const char* ip, unsigned short port);
 
-	// 接收消息
-	bool doRecv();
+	void Close();
 
-	// 发送消息
-	bool doSend();
+	bool OnRun();
 
-	// 登录服务器
-	bool doLogin();
+	bool isRun();
 
-	// 开启服务
-	bool doRun(timeval time_val);
+	int RecvData(SOCKET cSock);
 
-	// 处理消息
-	bool dispose();
+	virtual void OnNetMsg(DataHeader* header);
 
-	// 关闭socket
-	bool doClose();
+	int SendData(DataHeader* header, int nLen);
 };
 
 #endif
