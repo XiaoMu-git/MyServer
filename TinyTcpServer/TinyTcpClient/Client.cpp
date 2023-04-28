@@ -1,89 +1,46 @@
-#include "Client.h"
+#include "EasyTcpClient.h"
+#include <thread>
 
-EasyTcpClient::EasyTcpClient() {
-	_sock = INVALID_SOCKET;
-	_isConnect = false;
-}
-
-EasyTcpClient::~EasyTcpClient() {
-	Close();
-}
-
-void EasyTcpClient::InitSocket() {
-#ifdef _WIN32
-	WORD ver = MAKEWORD(2, 2);
-	WSADATA dat;
-	WSAStartup(ver, &dat);
-#endif // _WIN32
-	if (INVALID_SOCKET != _sock) {
-		printf("<socket=%d关闭旧连接...\n", _sock);
-		Close();
-	}
-	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (INVALID_SOCKET == _sock) {
-		printf("错误，建立Socket失败...\n");
-	}
-}
-
-int EasyTcpClient::Connect(const char* ip, unsigned short port) {
-	if (INVALID_SOCKET == _sock) {
-		InitSocket();
-	}
-	sockaddr_in _sin = {};
-	_sin.sin_family = AF_INET;
-	_sin.sin_port = htons(port);
-#ifdef _WIN32
-	_sin.sin_addr.S_un.S_addr = inet_addr(ip);
-#else
-	_sin.sin_addr.s_addr = inet_addr(ip);
-#endif
-	int ret = connect(_sock, (sockaddr*)&_sin, sizeof(sockaddr_in));
-	if (SOCKET_ERROR == ret) {
-		printf("<socket=%d>错误，连接服务器<%s:%d>失败...\n", _sock, ip, port);
-	}
-	else {
-		_isConnect = true;
-	}
-	return ret;
-}
-
-void EasyTcpClient::Close() {
-	if (_sock != INVALID_SOCKET)
+void cmdThread(EasyTcpClient* client)
+{
+	while (true)
 	{
-#ifdef _WIN32
-		closesocket(_sock);
-		WSACleanup();
-#else
-		close(_sock);
-#endif
-		_sock = INVALID_SOCKET;
-	}
-	_isConnect = false;
-}
-
-bool EasyTcpClient::OnRun() {
-
-}
-
-bool EasyTcpClient::isRun() {
-	return _sock != INVALID_SOCKET && _isConnect;
-}
-
-int EasyTcpClient::RecvData(SOCKET cSock) {
-
-}
-
-void EasyTcpClient::OnNetMsg(DataHeader* header) {
-
-}
-
-int EasyTcpClient::SendData(DataHeader* header, int nLen) {
-	int ret = SOCKET_ERROR;
-	if (isRun() && header) {
-		ret = send(_sock, (const char*)header, nLen, 0);
-		if (SOCKET_ERROR == ret) {
-			Close();
+		char cmdBuf[256] = {};
+		scanf("%s", cmdBuf);
+		if (0 == strcmp(cmdBuf, "exit")) {
+			client->Close();
+			printf("退出cmdThread线程\n");
+			break;
+		}
+		else if (0 == strcmp(cmdBuf, "login")) {
+			Login login;
+			strcpy(login.userName, "lyd");
+			strcpy(login.PassWord, "lydmm");
+			client->SendData(&login);
+		}
+		else if (0 == strcmp(cmdBuf, "logout")) {
+			Logout logout;
+			strcpy(logout.userName, "lyd");
+			client->SendData(&logout);
+		}
+		else {
+			printf("不支持的命令。\n");
 		}
 	}
-	return ret;
+}
+
+int main() {
+	EasyTcpClient client;
+	client.Connect("127.0.0.1", 10001);
+
+	std::thread th_1(cmdThread, &client);
+	th_1.detach();
+
+	while (client.isRun()) {
+		client.OnRun();
+	}
+	client.Close();
+	printf("已退出...\n");
+	system("pause");
+	return 0;
 }

@@ -1,7 +1,8 @@
-#ifndef _DataType_h_
-#define _DataType_h_
+#ifndef _MessageHeader_h_
+#define _MessageHeader_h_
 
-enum CMD {
+enum CMD
+{
 	CMD_LOGIN,
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
@@ -12,11 +13,6 @@ enum CMD {
 
 struct DataHeader
 {
-	DataHeader()
-	{
-		dataLength = sizeof(DataHeader);
-		cmd = CMD_ERROR;
-	}
 	short dataLength;
 	short cmd;
 };
@@ -30,7 +26,6 @@ struct Login : public DataHeader
 	}
 	char userName[32];
 	char PassWord[32];
-	char data[32];
 };
 
 struct LoginResult : public DataHeader
@@ -42,7 +37,6 @@ struct LoginResult : public DataHeader
 		result = 0;
 	}
 	int result;
-	char data[92];
 };
 
 struct Logout : public DataHeader
@@ -77,4 +71,4 @@ struct NewUserJoin : public DataHeader
 	int scok;
 };
 
-#endif
+#endif // !_MessageHeader_h_
