@@ -1,13 +1,18 @@
 #include "Client.h"
 
+char buffer[BUFF_SIZE] = {};
+
 // 无参构造
 Client::Client() {
-	_socket = INVALID_SOCKET;
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 #endif
+	_socket = INVALID_SOCKET;
+	_data_len = 0;
+	_times = 0;
+	_uid = -1;
 }
 
 // 析构函数
@@ -44,6 +49,7 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 // 发送消息
 bool Client::doSend(Header* header) {
 	if (isRun() && header) {
+		header->_uid = _uid;
 		int ret = send(_socket, (const char*)header, header->_length, 0);
 		return ret > 0;
 	}
@@ -52,52 +58,37 @@ bool Client::doSend(Header* header) {
 
 // 接收消息
 bool Client::doRecv() {
-	char temp[4096] = {};
-	int len = (int)recv(_socket, temp, sizeof(Header), 0);
+	int len = (int)recv(_socket, buffer + _data_len, BUFF_SIZE - _data_len, 0);
 	if (len <= 0) return false;
-	Header* header = (Header*)temp;
-	recv(_socket, temp + sizeof(Header), header->_length - sizeof(Header), 0);
-	processMsg(header);
+	_data_len += len;
+	cout << "[" << ++_times << "]收到服务器消息，消息长度为：" << len << endl;
+	while (_data_len >= sizeof(Header)) {
+		Header* header = (Header*)buffer;
+		if (_data_len >= header->_length) {
+			_data_len -= header->_length;
+			processMsg(header);
+			memcpy(buffer, buffer + header->_length, _data_len);
+		}
+		else break;
+	}
 	return true;
 }
 
 // 处理消息
 bool Client::processMsg(Header* header) {
 	switch (header->_type) {
-	case CMD_USERJOIN: {
-		UserInfo* info = (UserInfo*)header;
-		if (_socket != info->_socket) {
-			cout << "收到服务端消息：CMD_USERJOIN，数据长度：" << info->_length << endl;
-		}
+	case CMD_UID: 
+		_uid = header->_uid;
+		cout << "服务器分配的<uid=" << _uid << '>' << endl;
 		break;
-	}
-	case CMD_LOGIN_RESULT: {
-		Response* result = (Response*)header;
-		cout << "收到服务端消息：CMD_LOGIN_RESULT，数据长度：" << result->_length << endl;
+	default:
 		break;
-	}
-	case CMD_LOGOUT_RESULT: {
-		Response* result = (Response*)header;
-		cout << "收到服务端消息：CMD_LOGOUT_RESULT，数据长度：" << result->_length << endl;
-		break;
-	}
-	case CMD_MESSAGE: {
-		Message* message = (Message*)header;
-		if (message->_socket != _socket) {
-			cout << "<socket = " << message->_socket << ">" << message->_message << endl;
-		}
-		break;
-	}
-	default: {
-		return false;
-		break;
-	}
 	}
 	return true;
 }
 
 // 客户端启动
-bool Client::Run(const timeval time_val) {
+bool Client::Run(timeval time_val) {
 	if (isRun()) {
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
@@ -133,22 +124,22 @@ bool Client::Close() {
 	return false;
 }
 
-SOCKET Client::getSocket() {
+SOCKET Client::Socket(const SOCKET socket) {
+	if (socket != -1) _socket = socket;
 	return _socket;
 }
 
-char* Client::getUsername() {
+char* Client::Username(const char* username) {
+	if (username != NULL) strcpy(_username, username);
 	return _username;
 }
 
-void Client::setUsername(const char* username) {
-	strcpy(_username, username);
-}
-
-char* Client::getPassword() {
+char* Client::Password(const char* password) {
+	if (password != NULL) strcpy(_password, password);
 	return _password;
 }
 
-void Client::setPassword(const char* password) {
-	strcpy(_password, password);
+long long Client::Uid(long long uid) {
+	if (uid != -1) _uid = uid;
+	return _uid;
 }

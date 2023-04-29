@@ -25,6 +25,9 @@ private:
 	SOCKET _socket;
 	char _username[32];
 	char _password[32];
+	long long _uid;
+	int _data_len;
+	int _times;
 
 public:
 	// 无参构造
@@ -49,7 +52,7 @@ public:
 	bool processMsg(Header* header);
 
 	// 客户端运行
-	bool Run(const timeval time_val);
+	bool Run(timeval time_val);
 
 	// 运行状态
 	bool isRun();
@@ -57,16 +60,13 @@ public:
 	// 关闭客户端
 	bool Close();
 
-	SOCKET getSocket();
+	SOCKET Socket(const SOCKET socket = -1);
 
-	char* getUsername();
+	char* Username(const char* username = NULL);
 
-	void setUsername(const char* username);
+	char* Password(const char* password = NULL);
 
-	char* getPassword();
-
-	void setPassword(const char* password);
-
+	long long Uid(long long uid = -1);
 };
 
 #endif // !Client

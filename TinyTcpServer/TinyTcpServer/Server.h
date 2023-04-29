@@ -25,7 +25,8 @@ using namespace std;
 class Server {
 private:
 	SOCKET _socket;
-	vector<UserInfo> _clients;
+	vector<ClientInfo*> _clients;
+	int _times;
 
 public:
 	// 无参构造
@@ -53,19 +54,23 @@ public:
 	bool doSendAll(Header* header);
 
 	// 接收消息
-	bool doRecv(SOCKET client_sock);
+	bool doRecv(ClientInfo* client);
 
 	// 处理消息
 	bool processMsg(SOCKET client_sock, Header* header);
 
 	// 服务器运行
-	bool Run(const timeval time_val);
+	bool Run(timeval time_val);
 
 	// 运行状态
 	bool isRun();
 
 	// 关闭客户端
 	bool Close();
+
+	// 查找客户端
+	ClientInfo* findClient(SOCKET sock);
+	ClientInfo* findClient(long long uid);
 
 };
 
