@@ -11,8 +11,9 @@ Client::Client() {
 #endif
 	_socket = INVALID_SOCKET;
 	_data_len = 0;
-	_times = 0;
+	_msg_num = 0;
 	_uid = -1;
+	_is_connect = false;
 }
 
 // 析构函数
@@ -59,9 +60,13 @@ bool Client::doSend(Header* header) {
 // 接收消息
 bool Client::doRecv() {
 	int len = (int)recv(_socket, buffer + _data_len, BUFF_SIZE - _data_len, 0);
-	if (len <= 0) return false;
+	if (len <= 0) {
+		cout << "<socket=" << _socket << ">与服务器断开连接" << endl;
+		Close();
+		return false;
+	}
 	_data_len += len;
-	cout << "[" << ++_times << "]收到服务器消息，消息长度为：" << len << endl;
+	cout << "[" << ++_msg_num << "]收到服务器消息，消息长度为：" << len << endl;
 	while (_data_len >= sizeof(Header)) {
 		Header* header = (Header*)buffer;
 		if (_data_len >= header->_length) {
@@ -76,14 +81,7 @@ bool Client::doRecv() {
 
 // 处理消息
 bool Client::processMsg(Header* header) {
-	switch (header->_type) {
-	case CMD_UID: 
-		_uid = header->_uid;
-		cout << "服务器分配的<uid=" << _uid << '>' << endl;
-		break;
-	default:
-		break;
-	}
+	short type = header->_type;
 	return true;
 }
 
@@ -101,7 +99,6 @@ bool Client::Run(timeval time_val) {
 		}
 		return true;
 	}
-	cout << "客户端空闲中..." << endl;
 	return false;
 }
 
@@ -142,4 +139,9 @@ char* Client::Password(const char* password) {
 long long Client::Uid(long long uid) {
 	if (uid != -1) _uid = uid;
 	return _uid;
+}
+
+bool Client::isConnect(int is_connect) {
+	if (is_connect != -1) _is_connect = is_connect;
+	return _is_connect;
 }

@@ -22,6 +22,10 @@ public:
 	short _type;
 	short _length;
 	long long _uid;
+	Header() {
+		_length = sizeof(Header);
+		_type = CMD_ERROR;
+	}
 };
 
 class Response : public Header {

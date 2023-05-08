@@ -2,10 +2,12 @@
 #define _Server_h_
 
 #ifdef _WIN32
+#define FD_SETSIZE	1024
 #define WIN32_LEAN_AND_MEAN
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include<windows.h>
 #include<WinSock2.h>
+#include <ctime>
 #pragma comment(lib,"ws2_32.lib")
 #else
 #include<unistd.h>
@@ -26,7 +28,10 @@ class Server {
 private:
 	SOCKET _socket;
 	vector<ClientInfo*> _clients;
-	int _times;
+	int _msg_num;
+	int _pkg_num;
+	int _socket_num;
+	time_t _time_1, _time_2;
 
 public:
 	// 无参构造
@@ -71,6 +76,8 @@ public:
 	// 查找客户端
 	ClientInfo* findClient(SOCKET sock);
 	ClientInfo* findClient(long long uid);
+
+	int pkgNum(int pkg_num = -1);
 
 };
 

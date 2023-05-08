@@ -27,7 +27,8 @@ private:
 	char _password[32];
 	long long _uid;
 	int _data_len;
-	int _times;
+	int _msg_num;
+	bool _is_connect;
 
 public:
 	// 无参构造
@@ -67,6 +68,8 @@ public:
 	char* Password(const char* password = NULL);
 
 	long long Uid(long long uid = -1);
+
+	bool isConnect(int isConnect = -1);
 };
 
 #endif // !Client

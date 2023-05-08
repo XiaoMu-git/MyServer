@@ -2,7 +2,7 @@
 #define _DataType_h_
 
 #ifndef BUFF_SIZE
-#define BUFF_SIZE 51200
+#define BUFF_SIZE 10240
 #endif
 
 enum CMD {
@@ -22,6 +22,10 @@ public:
 	short _type;
 	short _length;
 	long long _uid;
+	Header() {
+		_length = sizeof(Header);
+		_type = CMD_ERROR;
+	}
 };
 
 class Response : public Header {
