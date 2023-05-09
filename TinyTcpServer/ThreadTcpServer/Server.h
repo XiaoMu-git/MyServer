@@ -28,8 +28,6 @@ class Server {
 protected:
 	SOCKET _socket;
 	vector<ClientInfo*> _clients;
-	char* _buffer;
-	int _buffer_len;
 
 public:
 	Server();
@@ -38,19 +36,7 @@ public:
 
 	bool doInit();
 
-	bool doBind(const char* ip, unsigned short port);
-
-	bool doListen(int num);
-
-	bool doAccept();
-
-	bool doSend(SOCKET socket, Header* header);
-
-	bool doRecv(ClientInfo* client);
-
-	bool doDispose(SOCKET client_sock, Header* header);
-
-	bool doRun(timeval time_val);
+	virtual bool doRun(timeval time_val);
 
 	bool isRun();
 

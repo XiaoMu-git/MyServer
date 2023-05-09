@@ -164,7 +164,6 @@ bool Server::isRun() {
 	return _socket != INVALID_SOCKET;
 }
 
-// ¹Ø±Õ¿Í»§¶Ë
 bool Server::Close() {
 	if (isRun()) {
 #ifdef _WIN32
