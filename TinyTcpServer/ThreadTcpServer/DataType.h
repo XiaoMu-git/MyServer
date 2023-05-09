@@ -1,6 +1,7 @@
 #ifndef _DATATYPE_H_
 #define _DATATYPE_H_
 #define MESSAGE_SIZE 256
+#define BUFF_SIZE 10240
 
 enum CMD {
 	CMD_ERROR,
@@ -27,6 +28,20 @@ public:
 		_message = new char[MESSAGE_SIZE];
 		_type = CMD_MESSAGE;
 		_length = sizeof(Message);
+		_uid = -1;
+	}
+};
+
+class ClientInfo {
+public:
+	SOCKET _socket;
+	long long _uid;
+	char* _buffer;
+	int _data_len;
+	ClientInfo() {
+		_buffer = new char[BUFF_SIZE];
+		_socket = INVALID_SOCKET;
+		_data_len = 0;
 		_uid = -1;
 	}
 };

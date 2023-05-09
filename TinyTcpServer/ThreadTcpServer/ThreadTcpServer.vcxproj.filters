@@ -24,6 +24,12 @@
     <ClCompile Include="HighTimer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ConnectServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DisposeServer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataType.h">
@@ -33,6 +39,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="HighTimer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectServer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DisposeServer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
