@@ -17,13 +17,15 @@
 #define SOCKET_ERROR            (-1)
 #endif
 
-#define MESSAGE_SIZE 256
+#define MESSAGE_SIZE 1008
 #define BUFF_SIZE 10240
 
 #include "HighTimer.h"
 #include <vector>
+#include <map>
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <functional>
 
 enum CMD {
@@ -53,6 +55,7 @@ public:
 		_length = sizeof(Message);
 		_uid = -1;
 	}
+	~Message() { delete _message; };
 };
 
 class ClientInfo {

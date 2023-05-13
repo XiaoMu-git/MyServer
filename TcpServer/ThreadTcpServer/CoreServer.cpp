@@ -9,6 +9,7 @@ CoreServer::CoreServer(int id, SOCKET socket) {
 #endif
 	_id = id;
 	_socket = socket;
+	_recv_count = 0;
 }
 
 // 析构函数
@@ -39,6 +40,7 @@ bool CoreServer::doRecv(ClientInfo* client) {
 			client->_data_len -= header->_length;
 			doDispose(client->_socket, header);
 			memcpy(client->_buffer, client->_buffer + header->_length, client->_data_len);
+			_recv_count++;
 		}
 		else break;
 	}
@@ -53,49 +55,62 @@ bool CoreServer::doDispose(SOCKET client_sock, Header* header) {
 
 // 服务器运行
 bool CoreServer::doRun() {
-	timeval time_val = { 0, 10 };
+	fd_set fd_reads_back;
+	bool fd_reads_change = true;
 	while (isRun()) {
 		// 取出缓存队列的客户端
 		if (_clients_buffer.size()) {
 			std::lock_guard<std::mutex> lock(_mutex);
 			for (auto client : _clients_buffer) {
-				_clients.push_back(client);
-				printf("thread<%d>, socket<%d>, Establish a connection\n", _id, client->_socket);
+				_clients.insert({ client->_socket,client });
+				if (_max_socket < client->_socket) _max_socket = client->_socket;
 			}
 			_clients_buffer.clear();
+			fd_reads_change = true;
 		}
-
-		// 如果没有需要处理的客户端，降低消耗
-		if (_clients.empty()) {
-			std::chrono::milliseconds timer(1);
-			std::this_thread::sleep_for(timer);
-			continue;
-		}
-
-		fd_set fd_reads;
-		FD_ZERO(&fd_reads);
-		FD_SET(_socket, &fd_reads);
 
 		// 加入新连接的客户端
-		SOCKET max_socket = _socket;
-		for (auto client : _clients) {
-			FD_SET(client->_socket, &fd_reads);
-			max_socket = max(max_socket, client->_socket);
+		fd_set fd_reads;
+		FD_ZERO(&fd_reads);
+		if (fd_reads_change) {
+			FD_SET(_socket, &fd_reads);
+			for (auto client : _clients) FD_SET(client.first, &fd_reads);
+			memcpy(&fd_reads_back, &fd_reads, sizeof(fd_set));
+			fd_reads_change = false;
 		}
-		int ret = select(max_socket + 1, &fd_reads, NULL, NULL, &time_val);
+		else {
+			memcpy(&fd_reads, &fd_reads_back, sizeof(fd_set));
+		}
+
+		// select 调用模型
+		int ret = select(_max_socket + 1, &fd_reads, NULL, NULL, NULL);
 		if (ret < 0) return false;
 
 		// 删除断开连接的客户端
-		for (auto client : _clients) {
-			if (FD_ISSET(client->_socket, &fd_reads) && !doRecv(client)) {
-				auto iter = find(_clients.begin(), _clients.end(), client);
-				if (iter != _clients.end()) {
-					printf("thread<%d>, socket<%d>, Disconnect。\n", _id, client->_socket);
-					delete client;
+#ifdef _WIN32
+		for (int i = 0; i < fd_reads.fd_count; i++) {
+			auto iter = _clients.find(fd_reads.fd_array[i]);
+			if (iter != _clients.end()) {
+				if (!doRecv(iter->second)) {
+					delete iter->second;
 					_clients.erase(iter);
+					fd_reads_change = true;
 				}
 			}
 		}
+#else
+		std::vector<SOCKET> temp;
+		for (auto client : _clients) {
+			if (FD_ISSET(client.first, &fd_reads)) {
+				if (!doRecv(client.second)) {
+					temp.push_back(client.first);
+					delete client.second;
+					fd_reads_change = true;
+				}
+			}
+		}
+		for (auto sock : temp) _clients.erase(sock);
+#endif
 	}
 	return false;
 }
@@ -115,8 +130,8 @@ bool CoreServer::doClose() {
 	if (isRun()) {
 #ifdef _WIN32
 		for (auto client : _clients) {
-			closesocket(client->_socket);
-			delete client;
+			closesocket(client.first);
+			delete client.second;
 		}
 		closesocket(_socket);
 #else
@@ -133,7 +148,7 @@ bool CoreServer::doClose() {
 	return false;
 }
 
-// 添加新的客户端
+// 添加新的客户端进入缓存
 void CoreServer::addClient(ClientInfo* client) {
 	std::lock_guard<std::mutex> lock(_mutex);
 	_clients_buffer.push_back(client);
@@ -141,7 +156,7 @@ void CoreServer::addClient(ClientInfo* client) {
 
 // 获取客户端数量
 int CoreServer::getClientNum() {
-	return _clients_buffer.size();
+	return _clients.size();
 }
 
 // 获取线程 id

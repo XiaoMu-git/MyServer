@@ -49,7 +49,7 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 }
 
 // 向服务器发送消息
-bool Client::doSend(Header* header) {
+bool Client::doSend(Header* header, int length) {
 	if (isRun() && header) {
 		header->_uid = _uid;
 		int ret = send(_socket, (const char*)header, header->_length, 0);

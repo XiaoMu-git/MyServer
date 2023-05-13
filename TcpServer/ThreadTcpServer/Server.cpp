@@ -8,6 +8,7 @@ Server::Server() {
 	WSAStartup(ver, &dat);
 #endif
 	_socket = INVALID_SOCKET;
+	_timer.upData();
 }
 
 // 析构函数
@@ -70,9 +71,13 @@ bool Server::doAccept() {
 bool Server::doRun() {
 	timeval time_val = { 0, 10 };
 	while (isRun()) {
+		timerMsg();
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
 		FD_SET(_socket, &fd_reads);
+
+		int ret = select(_socket + 1, &fd_reads, NULL, NULL, &time_val);
+		if (ret < 0) return false;
 
 		// 如果服务器存活，那么继续等待客户端
 		if (FD_ISSET(_socket, &fd_reads)) {
@@ -120,4 +125,19 @@ void Server::assignedClient(ClientInfo* client) {
 		}
 	}
 	min_Server->addClient(client);
+}
+
+// 服务器信息
+void Server::timerMsg() {
+	int recv_all = 0, clients_all = 0;
+	float interval = _timer.getSec();
+	if (interval >= 1.0f) {
+		for (auto server : core_servers) {
+			recv_all += server->_recv_count;
+			clients_all += server->getClientNum();
+			server->_recv_count = 0;
+		}
+		printf("time<%f>,thread<%d>,clients<%d>,recv<%d>\n", interval, core_servers.size(), clients_all, recv_all);
+		_timer.upData();
+	}
 }

@@ -18,7 +18,6 @@
 
 #define BUFF_SIZE 10240
 #include "DataType.h"
-#include "HighTimer.h"
 
 class Client {
 private:
@@ -37,7 +36,7 @@ public:
 
 	bool doConnect(const char* ip, unsigned short port);
 
-	bool doSend(Header* header);
+	bool doSend(Header* header, int length);
 
 	bool doRecv();
 

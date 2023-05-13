@@ -1,6 +1,6 @@
 #ifndef _DATATYPE_H_
 #define _DATATYPE_H_
-#define MESSAGE_SIZE 256
+#define MESSAGE_SIZE 1008
 
 enum CMD {
 	CMD_ERROR,
@@ -29,6 +29,7 @@ public:
 		_length = sizeof(Message);
 		_uid = -1;
 	}
+	~Message() { delete _message; };
 };
 
 #endif // !_DATATYPE_H_

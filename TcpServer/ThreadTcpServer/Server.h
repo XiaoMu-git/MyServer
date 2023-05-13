@@ -6,6 +6,7 @@
 
 class Server {
 private:
+	HighTimer _timer;
 	SOCKET _socket;
 	std::vector<CoreServer*> core_servers;
 
@@ -43,6 +44,8 @@ public:
 	// 分配客户端
 	void assignedClient(ClientInfo* client);
 
+	// 服务器信息
+	void timerMsg();
 };
 
 #endif // !Server
