@@ -11,8 +11,10 @@ Client::Client() {
 #endif // _WIN32
 	_socket = INVALID_SOCKET;
 	_uid = -1;
-	_buffer = new char[BUFF_SIZE];
-	_data_len = 0;
+	_recv_buff = new char[RECV_BUFF_SIZE];
+	_send_buff = new char[SEND_BUFF_SIZE];
+	_recv_data_len = 0;
+	_send_data_len = 0;
 	_connect = false;
 }
 
@@ -22,6 +24,8 @@ Client::~Client() {
 	WSACleanup();
 #endif // _WIN32
 	doClose();
+	delete _recv_buff;
+	delete _send_buff;
 }
 
 // 初始化 socket
@@ -49,7 +53,7 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 }
 
 // 向服务器发送消息
-bool Client::doSend(Header* header, int length) {
+bool Client::doSend(Header* header) {
 	if (isRun() && header) {
 		header->_uid = _uid;
 		int ret = send(_socket, (const char*)header, header->_length, 0);
@@ -60,24 +64,26 @@ bool Client::doSend(Header* header, int length) {
 
 // 接收服务器消息
 bool Client::doRecv() {
-	int recv_len = (int)recv(_socket, _buffer + _data_len, BUFF_SIZE - _data_len, 0);
+	int recv_len = (int)recv(_socket, _recv_buff + _recv_data_len, RECV_BUFF_SIZE - _recv_data_len, 0);
 	if (recv_len <= 0) {
 		cout << "<socket=" << _socket << ">与服务器断开连接" << endl;
 		doClose();
 		return false;
 	}
 	else {
-		_data_len += recv_len;
+		int left_pos = 0;
+		_recv_data_len += recv_len;
 		cout << "收到服务器消息，消息长度为：" << recv_len << endl;
-		while (_data_len >= sizeof(Header)) {
-			Header* header = (Header*)_buffer;
-			if (_data_len >= header->_length) {
+		while (_recv_data_len >= sizeof(Header)) {
+			Header* header = (Header*)(_recv_buff + left_pos);
+			if (_recv_data_len >= header->_length) {
 				doDispose(header);
-				_data_len -= header->_length;
-				memcpy(_buffer, _buffer + header->_length, _data_len);
+				_recv_data_len -= header->_length;
+				left_pos += header->_length;
 			}
 			else break;
 		}
+		memcpy(_recv_buff, _recv_buff + left_pos, _recv_data_len);
 		return true;
 	}
 }

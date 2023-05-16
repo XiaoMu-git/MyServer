@@ -71,11 +71,11 @@ bool Server::doAccept() {
 bool Server::doRun() {
 	timeval time_val = { 0, 10 };
 	while (isRun()) {
-		timerMsg();
+		timeMsg();
+
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
 		FD_SET(_socket, &fd_reads);
-
 		int ret = select(_socket + 1, &fd_reads, NULL, NULL, &time_val);
 		if (ret < 0) return false;
 
@@ -92,7 +92,7 @@ void Server::Start(int n) {
 	for (int i = 0; i < n; i++) {
 		CoreServer* server = new CoreServer(i, _socket);
 		server->Start();
-		core_servers.push_back(server);
+		_core_servers.push_back(server);
 	}
 	doRun();
 }
@@ -119,7 +119,7 @@ bool Server::doClose() {
 // 分配客户端
 void Server::assignedClient(ClientInfo* client) {
 	CoreServer* min_Server = NULL;
-	for (auto server : core_servers) {
+	for (auto server : _core_servers) {
 		if (min_Server == NULL || min_Server->getClientNum() > server->getClientNum()) {
 			min_Server = server;
 		}
@@ -127,17 +127,21 @@ void Server::assignedClient(ClientInfo* client) {
 	min_Server->addClient(client);
 }
 
-// 服务器信息
-void Server::timerMsg() {
-	int recv_all = 0, clients_all = 0;
-	float interval = _timer.getSec();
-	if (interval >= 1.0f) {
-		for (auto server : core_servers) {
+// 处理服务器消息
+void Server::timeMsg() {
+	float time_interval = _timer.getSec();
+	if (time_interval >= 1.0f) {
+		int client_all = 0;
+		int recv_all = 0;
+		int recv_pkg = 0;
+		for (auto server : _core_servers) {
+			client_all += server->getClientNum();
 			recv_all += server->_recv_count;
-			clients_all += server->getClientNum();
+			recv_pkg += server->_recv_package;
 			server->_recv_count = 0;
+			server->_recv_package = 0;
 		}
-		printf("time<%f>,thread<%d>,clients<%d>,recv<%d>\n", interval, core_servers.size(), clients_all, recv_all);
+		printf("服务端：thread<%d>,client<%d>,recv<%d>,package<%d>\n", _core_servers.size(), client_all, int(recv_all / time_interval), int(recv_pkg / time_interval));
 		_timer.upData();
 	}
 }

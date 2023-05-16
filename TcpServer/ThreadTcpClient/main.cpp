@@ -1,30 +1,47 @@
 #include "DataType.h"
 #include "Client.h"
+#include "HighTimer.h"
 #include <iostream>
 #include <thread>
+#include <atomic>
 
-const int client_num = 4000;
-const int thread_num = 4;
 const char ip[] = "127.0.0.1";
 // const char ip[] = "59.110.170.223";
+const int client_num = 1000;
+const int thread_num = 2;
+std::atomic_int client_all = 0;
+std::atomic_int send_all = 0;
+HighTimer timer;
 
+// 处理客户端消息
+void timeMsg() {
+	float time_interval = timer.getSec();
+	if (time_interval >= 1.0f) {
+		timer.upData();
+		printf("客户端：thread<%d>,client<%d>,send<%d>\n", thread_num, (int)client_all, int(send_all / time_interval));
+		send_all = 0;
+	}
+}
+
+// 连接服务器和发送数据
 void sendMsg(int id) {
 	Client* clients[client_num];
-	int connect_num = 0;
-	for (int i = 0; i < client_num / thread_num; i++) {
+	for (int i = 0; i < client_num; i++) {
 		clients[i] = new Client();
 		if (clients[i]->doConnect(ip, 6811)) {
 			clients[i]->Connect(true);
-			connect_num++;
+			client_all++;
 		}
 		else printf("thread<%d>, socket<%d>, Connection failed.\n", id, clients[i]->Socket());
 	}
-	printf("thread<%d>, client<%d>, Connections were completed.\n", id, connect_num);
 
-	Header* header;
+	Message* message = new Message();
 	while (true) {
-		for (int i = 0; i < client_num / thread_num; i++) {
-			if (clients[i]->Connect()) clients[i]->doSend(header, header->_length);
+		for (int i = 0; i < client_num; i++) {
+			if (clients[i]->Connect()) {
+				send_all++;
+				clients[i]->doSend(message);
+			}
 		}
 	}
 }
@@ -36,7 +53,10 @@ int main() {
 		th[i]->detach();
 	}
 
-	while (true) Sleep(100);
+	while (true) {
+		timeMsg();
+		Sleep(100);
+	}
 	system("pause");
 	return 0;
 }

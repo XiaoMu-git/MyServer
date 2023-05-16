@@ -1,6 +1,6 @@
 #include "Client.h"
 
-const int N = 1023;
+const int N = 1000;
 
 int main() {
 	Client* client[N];
@@ -8,7 +8,7 @@ int main() {
 	for (int i = 0; i < N; i++) {
 		client[i] = new Client();
 		if (client[i]->initSocket()) {
-			cout << "[" << i << "]<socket=" << client[i]->Socket() << ">socket创建成功" << endl;
+			cout << "[" << i << "]<socket=" << client[i]->Socket() << ">socket创建成功, ";
 			// 59.110.170.223
 			// 127.0.0.1
 			if (client[i]->doConnect("127.0.0.1", 6811)) {

@@ -5,13 +5,15 @@
 class CoreServer {
 private:
 	int _id;
-	SOCKET _socket, _max_socket;
+	fd_set fd_reads_back;
+	SOCKET _socket;
 	std::mutex _mutex;
 	std::thread _thread;
-	std::map<SOCKET, ClientInfo*> _clients;
+	std::vector<ClientInfo*> _clients;
 	std::vector<ClientInfo*> _clients_buffer;
 
 public:
+	std::atomic_int _recv_package;
 	std::atomic_int _recv_count;
 
 	// 有参构造

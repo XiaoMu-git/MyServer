@@ -145,9 +145,11 @@
   <ItemGroup>
     <ClInclude Include="Client.h" />
     <ClInclude Include="DataType.h" />
+    <ClInclude Include="HighTimer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="HighTimer.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

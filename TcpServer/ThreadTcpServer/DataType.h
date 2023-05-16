@@ -17,12 +17,11 @@
 #define SOCKET_ERROR            (-1)
 #endif
 
-#define MESSAGE_SIZE 1008
-#define BUFF_SIZE 10240
+#define RECV_BUFF_SIZE 10240
+#define SEND_BUFF_SIZE 10240
 
 #include "HighTimer.h"
 #include <vector>
-#include <map>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -48,26 +47,27 @@ public:
 
 class Message : public Header {
 public:
-	char* _message;
+	char _message[256];
 	Message() {
-		_message = new char[MESSAGE_SIZE];
 		_type = CMD_MESSAGE;
 		_length = sizeof(Message);
 		_uid = -1;
 	}
-	~Message() { delete _message; };
 };
 
 class ClientInfo {
 public:
 	SOCKET _socket;
 	long long _uid;
-	char* _buffer;
-	int _data_len;
+	char* _recv_buff;
+	int _recv_data_len;
+	char* _send_buff;
+	int _send_data_len;
 	ClientInfo() {
-		_buffer = new char[BUFF_SIZE];
+		_recv_buff = new char[RECV_BUFF_SIZE];
+		_send_buff = new char[SEND_BUFF_SIZE];
+		_recv_data_len = _send_data_len = 0;
 		_socket = INVALID_SOCKET;
-		_data_len = 0;
 		_uid = -1;
 	}
 };

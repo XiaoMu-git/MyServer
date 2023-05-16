@@ -1,6 +1,23 @@
 #ifndef _DATATYPE_H_
 #define _DATATYPE_H_
-#define MESSAGE_SIZE 1008
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <WinSock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#else
+#include <unistd.h> 
+#include <arpa/inet.h>
+#include <string.h>
+
+#define SOCKET int
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define SOCKET_ERROR            (-1)
+#endif
+
+#define RECV_BUFF_SIZE 10240
+#define SEND_BUFF_SIZE 10240
 
 enum CMD {
 	CMD_ERROR,
@@ -22,14 +39,12 @@ public:
 
 class Message : public Header {
 public:
-	char* _message;
+	char _message[256];
 	Message() {
-		_message = new char[MESSAGE_SIZE];
 		_type = CMD_MESSAGE;
 		_length = sizeof(Message);
 		_uid = -1;
 	}
-	~Message() { delete _message; };
 };
 
 #endif // !_DATATYPE_H_
