@@ -1,6 +1,4 @@
 #include "Client.h"
-#include <iostream>
-using namespace std;
 
 // 无参构造
 Client::Client() {
@@ -54,26 +52,37 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 
 // 向服务器发送消息
 bool Client::doSend(Header* header) {
-	if (isRun() && header) {
-		header->_uid = _uid;
-		int ret = send(_socket, (const char*)header, header->_length, 0);
-		return ret > 0;
+	int ret = 0;
+	int remainder_len = header->_length;
+	while (true) {
+		if (_send_data_len + remainder_len >= SEND_BUFF_SIZE) {
+			int empty_len = SEND_BUFF_SIZE - _send_data_len;
+			memcpy(_send_buff + _send_data_len, header + (header->_length - remainder_len), empty_len);
+			ret = send(_socket, (const char*)_send_buff, SEND_BUFF_SIZE, 0);
+			remainder_len -= empty_len;
+			_send_data_len = 0;
+		}
+		else {
+			memcpy(_send_buff + _send_data_len, header, remainder_len);
+			_send_data_len += remainder_len;
+			break;
+		}
 	}
-	return false;
+	return ret > 0;
 }
 
 // 接收服务器消息
 bool Client::doRecv() {
 	int recv_len = (int)recv(_socket, _recv_buff + _recv_data_len, RECV_BUFF_SIZE - _recv_data_len, 0);
 	if (recv_len <= 0) {
-		cout << "<socket=" << _socket << ">与服务器断开连接" << endl;
+		printf("socket<%d>与服务器断开连接\n", _socket);
 		doClose();
 		return false;
 	}
 	else {
 		int left_pos = 0;
 		_recv_data_len += recv_len;
-		cout << "收到服务器消息，消息长度为：" << recv_len << endl;
+		printf("recv_len<%d>\n", recv_len);
 		while (_recv_data_len >= sizeof(Header)) {
 			Header* header = (Header*)(_recv_buff + left_pos);
 			if (_recv_data_len >= header->_length) {

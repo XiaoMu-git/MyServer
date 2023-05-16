@@ -1,7 +1,6 @@
 #include "DataType.h"
 #include "Client.h"
 #include "HighTimer.h"
-#include <iostream>
 #include <thread>
 #include <atomic>
 
