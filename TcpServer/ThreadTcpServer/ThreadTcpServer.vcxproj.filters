@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CoreServer.h">
+    <ClInclude Include="ComputeCore.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="HighTimer.h">
@@ -27,9 +27,12 @@
     <ClInclude Include="DataType.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CoreServer.cpp">
+    <ClCompile Include="ComputeCore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="HighTimer.cpp">
@@ -39,6 +42,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

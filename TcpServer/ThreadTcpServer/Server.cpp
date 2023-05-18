@@ -54,7 +54,7 @@ bool Server::doListen(int n) {
 bool Server::doAccept() {
 	sockaddr_in client_addr = {};
 	int addr_len = sizeof(sockaddr_in);
-	ClientInfo* client = new ClientInfo();
+	Client* client = new Client();
 #ifdef _WIN32
 	client->_socket = accept(_socket, (sockaddr*)&client_addr, &addr_len);
 #else
@@ -90,9 +90,9 @@ bool Server::doRun() {
 
 void Server::Start(int n) {
 	for (int i = 0; i < n; i++) {
-		CoreServer* server = new CoreServer(i, _socket);
-		server->Start();
-		_core_servers.push_back(server);
+		ComputeCore* core = new ComputeCore(i, _socket);
+		core->Start();
+		_core_servers.push_back(core);
 	}
 	doRun();
 }
@@ -117,14 +117,14 @@ bool Server::doClose() {
 }
 
 // 分配客户端
-void Server::assignedClient(ClientInfo* client) {
-	CoreServer* min_Server = NULL;
-	for (auto server : _core_servers) {
-		if (min_Server == NULL || min_Server->getClientNum() > server->getClientNum()) {
-			min_Server = server;
+void Server::assignedClient(Client* client) {
+	ComputeCore* min_core = NULL;
+	for (auto core : _core_servers) {
+		if (!min_core || min_core->getClientNum() > core->getClientNum()) {
+			min_core = core;
 		}
 	}
-	min_Server->addClient(client);
+	min_core->addClient(client);
 }
 
 // 处理服务器消息

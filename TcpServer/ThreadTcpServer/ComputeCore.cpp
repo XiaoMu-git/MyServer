@@ -1,7 +1,7 @@
-#include "CoreServer.h"
+#include "ComputeCore.h"
 
 // 有参构造
-CoreServer::CoreServer(int id, SOCKET socket) {
+ComputeCore::ComputeCore(int id, SOCKET socket) {
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
@@ -14,7 +14,7 @@ CoreServer::CoreServer(int id, SOCKET socket) {
 }
 
 // 析构函数
-CoreServer::~CoreServer() {
+ComputeCore::~ComputeCore() {
 #ifdef _WIN32
 	WSACleanup();
 #endif
@@ -22,7 +22,7 @@ CoreServer::~CoreServer() {
 }
 
 // 发送消息
-bool CoreServer::doSend(SOCKET socket, Header* header) {
+bool ComputeCore::doSend(SOCKET socket, Header* header) {
 	if (isRun() && header) {
 		int ret = send(socket, (const char*)header, header->_length, 0);
 		return ret > 0;
@@ -31,7 +31,7 @@ bool CoreServer::doSend(SOCKET socket, Header* header) {
 }
 
 // 接收消息
-bool CoreServer::doRecv(ClientInfo* client) {
+bool ComputeCore::doRecv(Client* client) {
 	int recv_len = (int)recv(client->_socket, client->_recv_buff + client->_recv_data_len, RECV_BUFF_SIZE - client->_recv_data_len, 0);
 	if (recv_len <= 0) return false;
 	int left_pos = 0;
@@ -52,13 +52,13 @@ bool CoreServer::doRecv(ClientInfo* client) {
 }
 
 // 处理消息
-bool CoreServer::doDispose(SOCKET client_sock, Header* header) {
+bool ComputeCore::doDispose(SOCKET client_sock, Header* header) {
 	short type = header->_type;
 	return true;
 }
 
 // 服务器运行
-bool CoreServer::doRun() {
+bool ComputeCore::doRun() {
 	timeval time_val = { 0, 10 };
 	bool is_change = false;
 	while (isRun()) {
@@ -102,18 +102,18 @@ bool CoreServer::doRun() {
 }
 
 // 开启服务器线程
-void CoreServer::Start() {
-	_thread = std::thread(std::mem_fn(&CoreServer::doRun), this);
+void ComputeCore::Start() {
+	_thread = std::thread(std::mem_fn(&ComputeCore::doRun), this);
 	_thread.detach();
 }
 
 // 运行状态
-bool CoreServer::isRun() {
+bool ComputeCore::isRun() {
 	return _socket != INVALID_SOCKET;
 }
 
 // 关闭服务器
-bool CoreServer::doClose() {
+bool ComputeCore::doClose() {
 	if (isRun()) {
 #ifdef _WIN32
 		for (auto client : _clients) {
@@ -136,17 +136,17 @@ bool CoreServer::doClose() {
 }
 
 // 添加新的客户端
-void CoreServer::addClient(ClientInfo* client) {
+void ComputeCore::addClient(Client* client) {
 	std::lock_guard<std::mutex> lock(_mutex);
 	_clients_buffer.push_back(client);
 }
 
 // 获取客户端数量
-int CoreServer::getClientNum() {
+int ComputeCore::getClientNum() {
 	return _clients.size();
 }
 
 // 获取线程 id
-int CoreServer::getId() {
+int ComputeCore::getId() {
 	return _id;
 }

@@ -2,13 +2,14 @@
 #define _Server_h_
 
 #include "DataType.h"
-#include "CoreServer.h"
+#include "ComputeCore.h"
+#include "HighTimer.h"
 
 class Server {
 private:
 	SOCKET _socket;
 	HighTimer _timer;
-	std::vector<CoreServer*> _core_servers;
+	std::vector<ComputeCore*> _core_servers;
 
 public:
 	// 无参构造
@@ -42,7 +43,7 @@ public:
 	bool doClose();
 
 	// 分配客户端
-	void assignedClient(ClientInfo* client);
+	void assignedClient(Client* client);
 
 	// 处理服务器消息
 	void timeMsg();
