@@ -1,85 +1,72 @@
-#ifndef _DataType_h_
-#define _DataType_h_
+#ifndef _DATATYPE_H_
+#define _DATATYPE_H_
 
-#ifndef BUFF_SIZE
-#define BUFF_SIZE 10240
+#ifdef _WIN32
+#define FD_SETSIZE 2048
+#define WIN32_LEAN_AND_MEAN
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include<windows.h>
+#include<WinSock2.h>
+#pragma comment(lib,"ws2_32.lib")
+#else
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<string.h>
+
+#define SOCKET int
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define SOCKET_ERROR            (-1)
 #endif
+
+#define RECV_BUFF_SIZE 10240
+#define SEND_BUFF_SIZE 10240
+#define MESSAGE_SIZE 256
+
+#include "HighTimer.h"
+#include <vector>
+#include <map>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <functional>
+
+class Header;
 
 enum CMD {
 	CMD_ERROR,
-	CMD_UID,
-	CMD_LOGIN,
-	CMD_LOGIN_RESULT,
-	CMD_LOGOUT,
-	CMD_LOGOUT_RESULT,
-	CMD_USERJOIN,
-	CMD_MESSAGE,
-	CMD_COMMAND
+	CMD_MESSAGE
+};
+
+class Client {
+public:
+	SOCKET _socket;
+	short _recv_pos, _send_pos;
+	char* _recv_buff, * _send_buff;
+
+	Client(SOCKET socket);
+
+	// ·¢ËÍÏûÏ¢
+	void doSend(Header* header);
+
+	virtual ~Client();
 };
 
 class Header {
 public:
-	short _type;
-	short _length;
-	long long _uid;
-	Header() {
-		_length = sizeof(Header);
-		_type = CMD_ERROR;
-	}
-};
+	short _size, _type;
 
-class Response : public Header {
-public:
-	bool _result;
-	Response() {
-		_length = sizeof(Response);
-		_result = false;
-		_uid = -1;
-	}
-};
+	Header();
 
-class UserInfo : public Header {
-public:
-	char _username[32];
-	char _password[32];
-	UserInfo() {
-		_type = CMD_ERROR;
-		_length = sizeof(UserInfo);
-		_uid = -1;
-	}
+	virtual ~Header();
 };
 
 class Message : public Header {
 public:
-	char _message[256];
-	Message() {
-		_type = CMD_MESSAGE;
-		_length = sizeof(Message);
-		_uid = -1;
-	}
+	char* msg;
+
+	Message();
+
+	virtual ~Message();
 };
 
-class Command : public Header {
-public:
-	char _command[256];
-	Command() {
-		_type = CMD_COMMAND;
-		_length = sizeof(Command);
-		_uid = -1;
-	}
-};
-
-class ClientInfo {
-public:
-	SOCKET _socket;
-	long long _uid;
-	char _buffer[BUFF_SIZE];
-	int _data_len;
-	ClientInfo() {
-		_socket = INVALID_SOCKET;
-		_data_len = 0;
-		_uid = -1;
-	}
-};
-
-#endif // !_DataType_h_
+#endif // !_DATATYPE_H_

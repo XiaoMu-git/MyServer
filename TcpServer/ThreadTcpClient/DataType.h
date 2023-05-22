@@ -2,14 +2,16 @@
 #define _DATATYPE_H_
 
 #ifdef _WIN32
+#define FD_SETSIZE 2048
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <WinSock2.h>
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include<windows.h>
+#include<WinSock2.h>
 #pragma comment(lib,"ws2_32.lib")
 #else
-#include <unistd.h> 
-#include <arpa/inet.h>
-#include <string.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<string.h>
 
 #define SOCKET int
 #define INVALID_SOCKET  (SOCKET)(~0)
@@ -18,33 +20,39 @@
 
 #define RECV_BUFF_SIZE 10240
 #define SEND_BUFF_SIZE 10240
+#define MESSAGE_SIZE 256
+
+#include "HighTimer.h"
+#include <vector>
+#include <map>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <functional>
+
+class Header;
 
 enum CMD {
 	CMD_ERROR,
-	CMD_MESSAGE,
-	CMD_NULL
+	CMD_MESSAGE
 };
 
 class Header {
 public:
-	short _type;
-	short _length;
-	long long _uid;
-	Header() {
-		_length = sizeof(Header);
-		_type = CMD_NULL;
-		long long _uid = -1;
-	}
+	short _size, _type;
+
+	Header();
+
+	virtual ~Header();
 };
 
 class Message : public Header {
 public:
-	char _message[256];
-	Message() {
-		_type = CMD_MESSAGE;
-		_length = sizeof(Message);
-		_uid = -1;
-	}
+	char* msg;
+
+	Message();
+
+	virtual ~Message();
 };
 
 #endif // !_DATATYPE_H_

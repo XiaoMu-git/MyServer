@@ -2,44 +2,51 @@
 #define _CLIENT_H_
 
 #include "DataType.h"
-#include "HighTimer.h"
 
 class Client {
 private:
-	SOCKET _socket;
-	long long _uid;
+	const char* _ip;
+	unsigned short _port;
 	char* _recv_buff;
-	int _recv_data_len;
 	char* _send_buff;
-	int _send_data_len;
-	bool _connect;
+	int _recv_pos, _send_pos;
 
-public:
-	Client();
+protected:
+	// 初始化socket
+	bool initSocket();
 
-	~Client();
+	// 连接服务器
+	bool doConnect();
 
-	bool doSocket();
+	// 接收消息
+	int doRecv();
 
-	bool doConnect(const char* ip, unsigned short port);
+	// 发送消息
+	void doSend(Header* header);
 
-	bool doSend(Header* header);
+	// 处理消息
+	void doDispose(Header* header);
 
-	bool doRecv();
-
-	bool doDispose(Header* header);
-
-	bool doRun(timeval time_val);
-
+	// 运行状态
 	bool isRun();
 
-	bool doClose();
+	// 关闭客户端
+	void doClose();
 
-	SOCKET Socket(const SOCKET socket = -1);
+public:
+	SOCKET _socket;
+	std::atomic_int _recv_num, _recv_pkg;
+	std::atomic_int _send_num, _send_pkg;
 
-	long long Uid(long long uid = -1);
+	Client(const char* ip, unsigned short port);
 
-	bool Connect(int connect = -1);
+	// 运行函数
+	bool doRun(Header* header);
+
+	// 启动客户端
+	void Start();
+
+	virtual ~Client();
 };
 
 #endif // !_CLIENT_H_

@@ -15,14 +15,23 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Server.h">
+    <ClInclude Include="HighTimer.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DataType.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="HighTimer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataType.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="Server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

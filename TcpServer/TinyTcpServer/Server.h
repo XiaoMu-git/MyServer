@@ -1,85 +1,62 @@
-#ifndef Server
-#define _Server_h_
-
-#ifdef _WIN32
-#define FD_SETSIZE	1024
-#define WIN32_LEAN_AND_MEAN
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include<windows.h>
-#include<WinSock2.h>
-#include <ctime>
-#pragma comment(lib,"ws2_32.lib")
-#else
-#include<unistd.h>
-#include<arpa/inet.h>
-#include<string.h>
-
-#define SOCKET int
-#define INVALID_SOCKET  (SOCKET)(~0)
-#define SOCKET_ERROR            (-1)
-#endif
+#ifndef _SERVER_H_
+#define _SERVER_H_
 
 #include "DataType.h"
-#include "DataType.h"
-#include <iostream>
-#include <vector>
-using namespace std;
+#include "HighTimer.h"
 
 class Server {
 private:
+	const char* _ip;
+	unsigned short _port;
 	SOCKET _socket;
-	vector<ClientInfo*> _clients;
-	int _msg_num;
-	int _pkg_num;
-	int _socket_num;
-	time_t _time_1, _time_2;
+	HighTimer _timer;
+	std::mutex _mutex;
+	std::map<SOCKET, Client*> _clients;
 
-public:
-	// 无参构造
-	Server();
-
-	// 析构函数
-	~Server();
-
-	// 初始化SOCKET
+protected:
+	// 初始化 socket
 	bool initSocket();
 
 	// 绑定端口
-	bool doBind(const char* ip, unsigned short port);
+	bool doBind();
 
 	// 监听端口
 	bool doListen(int num);
 
-	// 等待客户端
-	bool Accept();
-
-	// 发送消息
-	bool doSend(SOCKET socket, Header* header);
-
-	// 发送全局消息
-	bool doSendAll(Header* header);
+	// 等待客户端连接
+	void waitAccept();
 
 	// 接收消息
-	bool doRecv(ClientInfo* client);
+	int doRecv(Client* client);
+
+	// 发送消息
+	void doSend(Client* client, Header* header);
 
 	// 处理消息
-	bool processMsg(SOCKET client_sock, Header* header);
+	void doDispose(Client* client, Header* header);
 
-	// 服务器运行
-	bool Run(timeval time_val);
+	// 运行函数
+	void doRun();
+
+	// 关闭服务器
+	void doClose();
 
 	// 运行状态
 	bool isRun();
 
-	// 关闭客户端
-	bool Close();
+	// 服务器信息
+	void printInfo();
 
-	// 查找客户端
-	ClientInfo* findClient(SOCKET sock);
-	ClientInfo* findClient(long long uid);
+public:
+	std::atomic_int _recv_num, _recv_pkg;
+	std::atomic_int _send_num, _send_pkg;
 
-	int pkgNum(int pkg_num = -1);
+	Server(const char* ip, unsigned short port);
 
+	// 开启服务器
+	void Start();
+
+	virtual ~Server();
 };
 
-#endif // !Server
+#endif // !_SERVER_H_

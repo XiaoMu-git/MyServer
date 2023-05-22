@@ -5,8 +5,6 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TinyTcpServer", "TinyTcpServer\TinyTcpServer.vcxproj", "{0806DC77-293B-4268-BBF3-9648C9D1C3EB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TinyTcpClient", "TinyTcpClient\TinyTcpClient.vcxproj", "{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThreadTcpServer", "ThreadTcpServer\ThreadTcpServer.vcxproj", "{F7034824-1CE5-44C9-A62E-CDD4E35C59FB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ThreadTcpClient", "ThreadTcpClient\ThreadTcpClient.vcxproj", "{FBB84429-8C6B-4B57-83FF-A864FB076B8A}"
@@ -27,14 +25,6 @@ Global
 		{0806DC77-293B-4268-BBF3-9648C9D1C3EB}.Release|x64.Build.0 = Release|x64
 		{0806DC77-293B-4268-BBF3-9648C9D1C3EB}.Release|x86.ActiveCfg = Release|Win32
 		{0806DC77-293B-4268-BBF3-9648C9D1C3EB}.Release|x86.Build.0 = Release|Win32
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Debug|x64.ActiveCfg = Debug|x64
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Debug|x64.Build.0 = Debug|x64
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Debug|x86.ActiveCfg = Debug|Win32
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Debug|x86.Build.0 = Debug|Win32
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Release|x64.ActiveCfg = Release|x64
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Release|x64.Build.0 = Release|x64
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Release|x86.ActiveCfg = Release|Win32
-		{EE461319-CD63-4D35-BF1E-D756ECBF2DEA}.Release|x86.Build.0 = Release|Win32
 		{F7034824-1CE5-44C9-A62E-CDD4E35C59FB}.Debug|x64.ActiveCfg = Debug|x64
 		{F7034824-1CE5-44C9-A62E-CDD4E35C59FB}.Debug|x64.Build.0 = Debug|x64
 		{F7034824-1CE5-44C9-A62E-CDD4E35C59FB}.Debug|x86.ActiveCfg = Debug|Win32
