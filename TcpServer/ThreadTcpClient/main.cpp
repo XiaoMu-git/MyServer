@@ -1,67 +1,61 @@
+#include "DataType.h"
 #include "Client.h"
+#include "HighTimer.h"
+#include <thread>
+#include <atomic>
 
-#define CLIENT_NUM 10
-#define THRED_NUM 2
+const char ip[] = "127.0.0.1";
+// const char ip[] = "59.110.170.223";
+const int client_num = 1000;
+const int thread_num = 2;
+std::atomic_int alive_client_num = 0;
+std::atomic_int send_num = 0;
 HighTimer timer;
-int recv_num = 0, recv_pkg = 0;
-int send_num = 0, send_pkg = 0;
 
-void printInfo() {
-	float differ = timer.getSec();
-	if (differ >= 1.0f) {
-		printf("客户端：thread<%d>,recv<%d>,recv_pkg<%d>,send<%d>,send_pkg<%d>\n", THRED_NUM, (int)(recv_num / differ), (int)(recv_pkg / differ), (int)(send_num / differ), (int)(send_pkg / differ));
-		recv_num = recv_pkg = 0;
-		send_num = send_pkg = 0;
+// 处理客户端消息
+void timeMsg() {
+	float time_interval = timer.getSec();
+	if (time_interval >= 1.0f) {
 		timer.upData();
+		printf("客户端：thread<%d>,client<%d>,send<%d>\n", thread_num, (int)alive_client_num, int(send_num / time_interval));
+		send_num = 0;
 	}
 }
 
-void sendFun() {
-	Message* msg = new Message();
-	std::vector<Client*> clients;
-	std::vector<Client*> delete_clients;
-	for (int i = 0; i < CLIENT_NUM; i++) {
-		Client* client = new Client("127.0.0.1", 6811);
-		client->Start();
-		clients.push_back(client);
+// 连接服务器和发送数据
+void sendMsg(int id) {
+	Client* clients[client_num];
+	for (int i = 0; i < client_num; i++) {
+		clients[i] = new Client();
+		if (clients[i]->doConnect(ip, 6811)) {
+			clients[i]->Connect(true);
+			alive_client_num++;
+		}
+		else printf("thread<%d>, socket<%d>, Connection failed.\n", id, clients[i]->Socket());
 	}
 
+	Message* message = new Message();
 	while (true) {
-		for (auto client : clients) {
-			recv_num += client->_recv_num; client->_recv_num = 0;
-			recv_pkg += client->_recv_pkg; client->_recv_pkg = 0;
-			send_num += client->_send_num; client->_send_num = 0;
-			send_pkg += client->_send_pkg; client->_send_pkg = 0;
-			if (!client->doRun(msg)) {
-				delete_clients.push_back(client);
+		for (int i = 0; i < client_num; i++) {
+			if (clients[i]->Connect()) {
+				send_num++;
+				clients[i]->doSend(message);
 			}
 		}
-
-		for (auto client : delete_clients) {
-			for (auto iter = clients.begin(); iter != clients.end(); iter++) {
-				if ((*iter)->_socket == client->_socket) {
-					delete client;
-					clients.erase(iter);
-					break;
-				}
-			}
-		}
-		delete_clients.clear();
 	}
 }
 
 int main() {
-	for (int i = 0; i < THRED_NUM; i++) {
-		std::thread th(&sendFun);
-		th.detach();
+	std::thread* th[thread_num];
+	for (int i = 0; i < thread_num; i++) {
+		th[i] = new std::thread(sendMsg, i);
+		th[i]->detach();
 	}
 
 	while (true) {
-		printInfo();
-		std::chrono::microseconds t(1);
-		std::this_thread::sleep_for(t);
+		timeMsg();
+		Sleep(100);
 	}
-
 	system("pause");
 	return 0;
 }

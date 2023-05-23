@@ -1,38 +1,50 @@
 #include "Server.h"
 
-Server::Server(const char* ip, unsigned short port) {
+// 无参构造
+Server::Server() {
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
 	WSAStartup(ver, &dat);
 #endif
-	_ip = ip;
-	_port = port;
-	_timer.upData();
 	_socket = INVALID_SOCKET;
-	_recv_num = _recv_pkg = 0;
-	_send_num = _send_pkg = 0;
+	_msg_num = 0;
+	_socket_num = 0;
+	_pkg_num = 0;
+	_time_1 = time(nullptr);
+	_time_2 = time(nullptr);
 }
 
-// 初始化 socket
+// 析构函数
+Server::~Server() {
+#ifdef _WIN32
+	WSACleanup();
+#endif
+	Close();
+}
+
+// 初始化SOCKET
 bool Server::initSocket() {
+	if (isRun()) Close();
 	_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	return _socket != INVALID_SOCKET;
+	if (isRun()) return true;
+	else return false;
 }
 
 // 绑定端口
-bool Server::doBind() {
-	sockaddr_in addr_in = {};
-	addr_in.sin_family = AF_INET;
-	addr_in.sin_port = htons(_port);
+bool Server::doBind(const char* ip, unsigned short port) {
+	if (!isRun()) initSocket();
+	sockaddr_in _sin = {};
+	_sin.sin_family = AF_INET;
+	_sin.sin_port = htons(port);
 #ifdef _WIN32
-	if (_ip) addr_in.sin_addr.S_un.S_addr = inet_addr(_ip);
-	else addr_in.sin_addr.S_un.S_addr = INADDR_ANY;
+	if (ip) _sin.sin_addr.S_un.S_addr = inet_addr(ip);
+	else _sin.sin_addr.S_un.S_addr = INADDR_ANY;
 #else
-	if (_ip) addr_in.sin_addr.s_addr = inet_addr(_ip);
-	else addr_in.sin_addr.s_addr = INADDR_ANY;
+	if (ip) _sin.sin_addr.s_addr = inet_addr(ip);
+	else _sin.sin_addr.s_addr = INADDR_ANY;
 #endif
-	int ret = bind(_socket, (sockaddr*)&addr_in, sizeof(addr_in));
+	int ret = bind(_socket, (sockaddr*)&_sin, sizeof(_sin));
 	return ret != SOCKET_ERROR;
 }
 
@@ -42,135 +54,109 @@ bool Server::doListen(int num) {
 	return ret != SOCKET_ERROR;
 }
 
-// 等待客户端连接
-void Server::waitAccept() {
+// 等待客户端
+bool Server::Accept() {
 	sockaddr_in client_addr = {};
 	int addr_len = sizeof(sockaddr_in);
-	SOCKET client_socket;
+	ClientInfo* client = new ClientInfo();
 #ifdef _WIN32
-	client_socket = accept(_socket, (sockaddr*)&client_addr, &addr_len);
+	client->_socket = accept(_socket, (sockaddr*)&client_addr, &addr_len);
 #else
-	client_socket = accept(_socket, (sockaddr*)&client_addr, (socklen_t*)&addr_len);
+	client->_socket = accept(_socket, (sockaddr*)&client_addr, (socklen_t*)&addr_len);
 #endif
-	if (client_socket != INVALID_SOCKET) {
-		std::lock_guard<std::mutex> lock(_mutex);
-		_clients.insert({ client_socket , new Client(client_socket) });
+	if (client->_socket != INVALID_SOCKET) {
+		// cout << "[" << ++_socket_num << "]客户端<socket = " << client->_socket << ">连接到服务器" << endl;
+		_clients.push_back(client);
+		return true;
 	}
-}
-
-// 接收消息
-int Server::doRecv(Client* client) {
-	int recv_len = (int)recv(client->_socket, client->_recv_buff + client->_recv_pos, RECV_BUFF_SIZE - client->_recv_pos, 0);
-	if (recv_len <= 0) return recv_len;
-	int left_pos = 0;
-	client->_recv_pos += recv_len;
-	_recv_num++;
-	while (client->_recv_pos >= sizeof(Header)) {
-		Header* header = (Header*)client->_recv_buff;
-		if (client->_recv_pos >= header->_size) {
-			memcpy(client->_recv_buff, client->_recv_buff + header->_size, RECV_BUFF_SIZE - header->_size);
-			doDispose(client, header);
-			client->_recv_pos -= header->_size;
-			left_pos += header->_size;
-			_recv_pkg++;
-		}
-		else break;
-	}
-	memcpy(client->_recv_buff, client->_recv_buff + left_pos, client->_recv_pos);
-	return true;
+	else return false;
 }
 
 // 发送消息
-void Server::doSend(Client* client, Header* header) {
-	int remainder_len = header->_size;
-	_send_pkg++;
-	while (true) {
-		if (client->_send_pos + remainder_len >= SEND_BUFF_SIZE) {
-			int empty_len = SEND_BUFF_SIZE - client->_send_pos;
-			memcpy(client->_send_buff + client->_send_pos, header + (header->_size - remainder_len), empty_len);
-			send(_socket, (const char*)client->_send_buff, SEND_BUFF_SIZE, 0);
-			remainder_len -= empty_len;
-			client->_send_pos = 0;
-			_send_num++;
+bool Server::doSend(SOCKET socket, Header* header) {
+	if (isRun() && header) {
+		int ret = send(socket, (const char*)header, header->_length, 0);
+		return ret > 0;
+	}
+	return false;
+}
+
+// 发送全局消息
+bool Server::doSendAll(Header* header) {
+	for (auto client : _clients) doSend(client->_socket, header);
+	return true;
+}
+
+// 接收消息
+bool Server::doRecv(ClientInfo* client) {
+	int len = (int)recv(client->_socket, client->_buffer + client->_data_len, BUFF_SIZE - client->_data_len, 0);
+	if (len <= 0) return false;
+	client->_data_len += len;
+	// cout << "[" << ++_msg_num << "]收到客户端<socket = " << client->_socket << ">消息，消息长度为：" << len << endl;
+	while (client->_data_len >= sizeof(Header)) {
+		pkgNum(pkgNum() + 1);
+		Header* header = (Header*)client->_buffer;
+		if (client->_data_len >= header->_length) {
+			client->_data_len -= header->_length;
+			processMsg(client->_socket, header);
+			memcpy(client->_buffer, client->_buffer + header->_length, client->_data_len);
 		}
-		else {
-			memcpy(client->_send_buff + client->_send_pos, header, remainder_len);
-			client->_send_pos += remainder_len;
-			break;
+		else break;
+		_time_2 = time(nullptr);
+		if (_time_2 - _time_1 >= 1) {
+			cout << "前1秒钟接收到包的数量为：" << pkgNum() << endl;
+			_time_1 = _time_2;
+			pkgNum(0);
 		}
 	}
+	return true;
 }
 
 // 处理消息
-void Server::doDispose(Client* client, Header* header) {
-
+bool Server::processMsg(SOCKET client_sock, Header* header) {
+	short type = header->_type;
+	return true;
 }
 
-// 运行函数
-void Server::doRun() {
-	timeval time_val = { 0, 10 };
-	while (isRun()) {
-		printInfo();
-
+// 服务器运行
+bool Server::Run(timeval time_val) {
+	if (isRun()) {
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
 		FD_SET(_socket, &fd_reads);
+
+		// 加入新连接的客户端
 		SOCKET max_socket = _socket;
 		for (auto client : _clients) {
-			FD_SET(client.second->_socket, &fd_reads);
-			if (max_socket < client.second->_socket) max_socket = client.second->_socket;
+			FD_SET(client->_socket, &fd_reads);
+			max_socket = max(max_socket, client->_socket);
 		}
-
 		int ret = select(max_socket + 1, &fd_reads, NULL, NULL, &time_val);
-		if (ret < 0) return;
+		if (ret < 0) return false;
 
+		// 如果服务器存活，那么继续等待客户端
 		if (FD_ISSET(_socket, &fd_reads)) {
 			FD_CLR(_socket, &fd_reads);
-			waitAccept();
+			Accept();
+			return true;
 		}
 
-		for (int i = 0; i < fd_reads.fd_count; i++) {
-			auto iter = _clients.find(fd_reads.fd_array[i]);
-			if (iter != _clients.end()) {
-				if (doRecv(iter->second) == -1) _clients.erase(iter);
+		// 删除断开连接的客户端
+		for (auto client : _clients) {
+			if (FD_ISSET(client->_socket, &fd_reads) && !doRecv(findClient(client->_socket))) {
+				for (auto it = _clients.begin(); it != _clients.end(); it++) {
+					if ((*it)->_socket == client->_socket) {
+						// cout << "客户端<socket = " << client->_socket << ">与服务器断开连接" << endl;
+						delete client;
+						_clients.erase(it);
+						break;
+					}
+				}
 			}
 		}
+		return true;
 	}
-}
-
-// 开启服务器
-void Server::Start() {
-	if (initSocket()) printf("socket创建成功...\n");
-	else {
-		printf("socket创建失败...\n");
-		return;
-	}
-
-	if (doBind()) printf("端口绑定成功...\n");
-	else {
-		printf("端口绑定失败...\n");
-		return;
-	}
-
-	if (doListen(5)) printf("监听端口成功...\n");
-	else {
-		printf("监听端口失败...\n");
-		return;
-	}
-
-	doRun();
-}
-
-// 关闭服务器
-void Server::doClose() {
-	if (isRun()) {
-#ifdef _WIN32
-		closesocket(_socket);
-#else
-		close(_socket);
-#endif
-		_socket = INVALID_SOCKET;
-	}
+	return false;
 }
 
 // 运行状态
@@ -178,20 +164,44 @@ bool Server::isRun() {
 	return _socket != INVALID_SOCKET;
 }
 
-// 服务器信息
-void Server::printInfo() {
-	float differ = _timer.getSec();
-	if (differ >= 1.0f) {
-		printf("服务器：client<%d>,recv<%d>,recv_pkg<%d>,send<%d>,send_pkg<%d>\n", _clients.size(), (int)(_recv_num / differ), (int)(_recv_pkg / differ), (int)(_send_num / differ), (int)(_send_pkg / differ));
-		_recv_num = _recv_pkg = 0;
-		_send_num = _send_pkg = 0;
-		_timer.upData();
+bool Server::Close() {
+	if (isRun()) {
+#ifdef _WIN32
+		for (auto client : _clients) {
+			closesocket(client->_socket);
+			delete client;
+		}
+		closesocket(_socket);
+#else
+		for (auto client : _clients) {
+			close(client->_socket);
+			delete client;
+		}
+		close(_socket);
+#endif
+		_clients.clear();
+		_socket = INVALID_SOCKET;
+		return true;
 	}
+	return false;
 }
 
-Server::~Server() {
-#ifdef _WIN32
-	WSACleanup();
-#endif
-	doClose();
+// 查找客户端
+ClientInfo* Server::findClient(SOCKET sock) {
+	for (auto client : _clients) {
+		if (client->_socket == sock) return client;
+	}
+	return NULL;
+}
+
+ClientInfo* Server::findClient(long long uid) {
+	for (auto client : _clients) {
+		if (client->_uid == uid) return client;
+	}
+	return NULL;
+}
+
+int Server::pkgNum(int pkg_num) {
+	if (pkg_num != -1) _pkg_num = pkg_num;
+	return _pkg_num;
 }

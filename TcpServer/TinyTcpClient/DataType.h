@@ -2,7 +2,7 @@
 #define _DataType_h_
 
 #ifndef BUFF_SIZE
-#define BUFF_SIZE 10240
+#define BUFF_SIZE 51200
 #endif
 
 enum CMD {
