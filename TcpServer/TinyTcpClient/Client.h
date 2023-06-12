@@ -67,8 +67,6 @@ public:
 
 	char* Password(const char* password = NULL);
 
-	long long Uid(long long uid = -1);
-
 	bool isConnect(int isConnect = -1);
 };
 

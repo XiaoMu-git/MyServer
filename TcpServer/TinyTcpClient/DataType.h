@@ -1,72 +1,64 @@
 #ifndef _DataType_h_
 #define _DataType_h_
 
-#ifndef BUFF_SIZE
 #define BUFF_SIZE 51200
-#endif
+#define MESSAGE_SIZE 256
 
 enum CMD {
 	CMD_ERROR,
-	CMD_UID,
 	CMD_LOGIN,
 	CMD_LOGIN_RESULT,
 	CMD_LOGOUT,
 	CMD_LOGOUT_RESULT,
-	CMD_USERJOIN,
-	CMD_MESSAGE,
-	CMD_COMMAND
+	CMD_MESSAGE
 };
 
 class Header {
 public:
-	short _type;
-	short _length;
-	long long _uid;
+	short _type, _size;
+
+public:
 	Header() {
-		_length = sizeof(Header);
 		_type = CMD_ERROR;
+		_size = sizeof(Header);
 	}
+
 };
 
 class Response : public Header {
 public:
 	bool _result;
+
+public:
 	Response() {
-		_length = sizeof(Response);
+		_size = sizeof(Response);
 		_result = false;
-		_uid = -1;
 	}
+
 };
 
 class UserInfo : public Header {
 public:
 	char _username[32];
 	char _password[32];
+
+public:
 	UserInfo() {
-		_type = CMD_ERROR;
-		_length = sizeof(UserInfo);
-		_uid = -1;
+		_size = sizeof(UserInfo);
 	}
+
 };
 
 class Message : public Header {
 public:
-	char _message[256];
-	Message() {
-		_type = CMD_MESSAGE;
-		_length = sizeof(Message);
-		_uid = -1;
-	}
-};
+	char _msg[MESSAGE_SIZE];
 
-class Command : public Header {
 public:
-	char _command[256];
-	Command() {
-		_type = CMD_COMMAND;
-		_length = sizeof(Command);
-		_uid = -1;
+	Message() {
+		_size = sizeof(Message);
+		_type = CMD_MESSAGE;
 	}
+
 };
 
 class ClientInfo {

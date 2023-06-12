@@ -1,8 +1,7 @@
 #ifndef _Allocter_h_
 #define _Allocter_h_
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "MemoryPool.h"
 
 void* operator new (size_t size);
 

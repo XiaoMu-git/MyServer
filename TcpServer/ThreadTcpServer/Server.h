@@ -1,53 +1,50 @@
-#ifndef Server
+#ifndef _Server_h_
 #define _Server_h_
 
 #include "DataType.h"
-#include "ComputeCore.h"
-#include "HighTimer.h"
 
+typedef std::shared_ptr<Client> ClientPtr;
+typedef std::shared_ptr<Header> HeaderPtr;
 class Server {
 private:
-	const char* _ip;
+	char* _ip;
 	unsigned short _port;
 	SOCKET _socket;
-	HighTimer _timer;
-	std::vector<ComputeCore*> _compute_core;
+	std::thread _thread;
+	std::vector<ClientPtr> _clients;
 
 protected:
-	// 初始化 socket
 	bool initSocket();
 
-	// 绑定端口
 	bool doBind();
 
-	// 监听端口
-	bool doListen(int num);
+	bool doListen();
 
-	// 等待客户端
-	void waitAccept();
+	void doAccept();
 
-	// 服务器运行
-	void doRun();
+	void doSend(ClientPtr& client, HeaderPtr& header);
 
-	// 运行状态
-	bool isRun();
+	int doRecv(ClientPtr& client);
 
-	// 关闭服务器
-	bool doClose();
+	void processMsg(ClientPtr& client, Header* header);
 
-	// 分配客户端
-	void assignedClient(Client* client);
-
-	// 处理服务器消息
-	void timeMsg();
+	void doWork();
 
 public:
+	std::atomic_int _recv_count, _recv_pkg;
+	std::atomic_int _send_count, _send_pkg;
+
 	Server(const char* ip, unsigned short port);
 
-	// 开启服务器
-	void Start(int n = 1);
-
 	~Server();
+
+	bool isRun();
+	
+	void doClose();
+
+	void doThread();
+
+	size_t clientCount();
 };
 
-#endif // !Server
+#endif // !_Server_h_

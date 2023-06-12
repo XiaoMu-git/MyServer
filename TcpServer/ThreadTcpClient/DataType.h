@@ -20,6 +20,11 @@
 #define SEND_BUFF_SIZE 10240
 #define MESSAGE_SIZE 256
 
+#include <functional>
+#include <thread>
+#include <vector>
+#include <atomic>
+
 enum CMD {
 	CMD_ERROR,
 	CMD_MESSAGE,

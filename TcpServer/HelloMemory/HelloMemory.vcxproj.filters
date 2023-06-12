@@ -24,12 +24,18 @@
     <ClCompile Include="MemoryPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="HighTimer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Allocter.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HighTimer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,21 +1,17 @@
 #include "Allocter.h"
 
 void* operator new (size_t size) {
-	printf("new memory<%d>\n", size);
-	return malloc(size);
+	return MemoryManager::instance().mmalloc(size);
 }
 
-void operator delete (void* pointer) {
-	printf("delete memory\n");
-	free(pointer);
+void operator delete (void* ptr) {
+	MemoryManager::instance().ffree(ptr);
 }
 
 void* operator new[] (size_t size) {
-	printf("new[] memory<%d>\n", size);
-	return malloc(size);
+	return MemoryManager::instance().mmalloc(size);
 }
 
-void operator delete[](void* pointer) {
-	printf("delete[] memory\n");
-	free(pointer);
+void operator delete[](void* ptr) {
+	MemoryManager::instance().ffree(ptr);
 }

@@ -1,7 +1,7 @@
 #include "Client.h"
 
 // 无参构造
-Client::Client() {
+Client::Client(const char* ip, unsigned short port) {
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSAData data;
@@ -10,8 +10,12 @@ Client::Client() {
 	_socket = INVALID_SOCKET;
 	_recv_buff = new char[RECV_BUFF_SIZE];
 	_send_buff = new char[SEND_BUFF_SIZE];
+	_recv_count = _recv_pkg = 0;
+	_send_count = _send_pkg = 0;
 	_recv_pos = _send_pos = 0;
-	_connect = false;
+	strcpy(_ip, ip);
+	_port = port;
+	_thread = nullptr;
 }
 
 // 初始化 socket
@@ -21,16 +25,15 @@ bool Client::initSocket() {
 }
 
 // 连接服务器
-bool Client::doConnect(const char* ip, unsigned short port) {
+bool Client::doConnect() {
 	if (!isRun()) initSocket();
-	else return false;
 	sockaddr_in _sin = {};
 	_sin.sin_family = AF_INET;
-	_sin.sin_port = htons(port);
+	_sin.sin_port = htons(_port);
 #ifdef _WIN32
-	_sin.sin_addr.S_un.S_addr = inet_addr(ip);
+	_sin.sin_addr.S_un.S_addr = inet_addr((const char*)_ip);
 #else
-	_sin.sin_addr.s_addr = inet_addr(ip);
+	_sin.sin_addr.s_addr = inet_addr((const char*)_ip);
 #endif
 	int ret = connect(_socket, (sockaddr*)&_sin, sizeof(sockaddr_in));
 	return ret != SOCKET_ERROR;
@@ -40,8 +43,10 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 void Client::doSend(Header* header) {
 	int ret = 0;
 	int remainder_len = header->_size;
+	_send_pkg++;
 	while (true) {
 		if (_send_pos + remainder_len >= SEND_BUFF_SIZE) {
+			_send_count++;
 			int empty_len = SEND_BUFF_SIZE - _send_pos;
 			memcpy(_send_buff + _send_pos, header + (header->_size - remainder_len), empty_len);
 			ret = send(_socket, (const char*)_send_buff, SEND_BUFF_SIZE, 0);
@@ -65,12 +70,13 @@ int Client::doRecv() {
 		return recv_len;
 	}
 	else {
+		_recv_count++;
 		int left_pos = 0;
 		_recv_pos += recv_len;
-		printf("recv_len<%d>\n", recv_len);
 		while (_recv_pos >= sizeof(Header)) {
 			Header* header = (Header*)(_recv_buff + left_pos);
 			if (_recv_pos >= header->_size) {
+				_recv_pkg++;
 				doDispose(header);
 				_recv_pos -= header->_size;
 				left_pos += header->_size;
@@ -89,8 +95,12 @@ void Client::doDispose(Header* header) {
 
 // 运行函数
 void Client::doRun() {
-	timeval time_val = { 0, 10 };
-	if (isRun()) {
+	timeval time_val = { 0, 0 };
+	Message* msg = new Message();
+	if (!initSocket()) printf("初始化socket失败...\n");
+	if (!doConnect()) printf("建立连接失败...\n");
+
+	while (isRun()) {
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
 		FD_SET(_socket, &fd_reads);
@@ -102,12 +112,19 @@ void Client::doRun() {
 			FD_CLR(_socket, &fd_reads);
 			if (doRecv() < 0) return;
 		}
+		doSend(msg);
 	}
+}
+
+// 启动线程
+void Client::doThread() {
+	_thread = new std::thread(std::mem_fn(&Client::doRun), this);
+	_thread->detach();
 }
 
 // 运行状态
 bool Client::isRun() {
-	return _socket != INVALID_SOCKET;
+	return _socket != INVALID_SOCKET && _thread != nullptr;
 }
 
 // 关闭客户端
@@ -119,20 +136,7 @@ void Client::doClose() {
 		close(_socket);
 #endif
 		_socket = INVALID_SOCKET;
-		_connect = false;
 	}
-}
-
-// _socket 接口
-SOCKET Client::Socket(const SOCKET socket) {
-	if (socket != -1) _socket = socket;
-	return _socket;
-}
-
-// _connect 接口
-bool Client::Connect(int connect) {
-	if (connect != -1) _connect = connect;
-	return _connect;
 }
 
 Client::~Client() {

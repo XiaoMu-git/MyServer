@@ -1,61 +1,38 @@
 #include "DataType.h"
 #include "Client.h"
 #include "HighTimer.h"
-#include <thread>
-#include <atomic>
 
-const char ip[] = "127.0.0.1";
-// const char ip[] = "59.110.170.223";
-const int client_num = 1000;
-const int thread_num = 2;
-std::atomic_int alive_client_num = 0;
-std::atomic_int send_num = 0;
+#define CLIENT_COUNT 10
+
+Client* clients[CLIENT_COUNT];
 HighTimer timer;
 
-// 处理客户端消息
-void timeMsg() {
-	float time_interval = timer.getSec();
-	if (time_interval >= 1.0f) {
+void printInfo() {
+	float differ = timer.getSec();
+	if (differ >= 1.0f) {
+		int recv_count = 0, recv_pkg = 0;
+		int send_count = 0, send_pkg = 0;
+		for (int i = 0; i < CLIENT_COUNT; i++) {
+			recv_count += clients[i]->_recv_count; clients[i]->_recv_count = 0;
+			recv_pkg += clients[i]->_recv_pkg; clients[i]->_recv_pkg = 0;
+			send_count += clients[i]->_send_count; clients[i]->_send_count = 0;
+			send_pkg += clients[i]->_send_pkg; clients[i]->_send_pkg = 0;
+		}
+		printf("客户端: thread<%d>, recv_count<%d>, recv_pkg<%d>, send_count<%d>, send_pkg<%d>\n", CLIENT_COUNT, recv_count, recv_pkg, send_count, send_pkg);
 		timer.upData();
-		printf("客户端：thread<%d>,client<%d>,send<%d>\n", thread_num, (int)alive_client_num, int(send_num / time_interval));
-		send_num = 0;
-	}
-}
-
-// 连接服务器和发送数据
-void sendMsg(int id) {
-	Client* clients[client_num];
-	for (int i = 0; i < client_num; i++) {
-		clients[i] = new Client();
-		if (clients[i]->doConnect(ip, 6811)) {
-			clients[i]->Connect(true);
-			alive_client_num++;
-		}
-		else printf("thread<%d>, socket<%d>, Connection failed.\n", id, clients[i]->Socket());
-	}
-
-	Message* message = new Message();
-	while (true) {
-		for (int i = 0; i < client_num; i++) {
-			if (clients[i]->Connect()) {
-				send_num++;
-				clients[i]->doSend(message);
-			}
-		}
 	}
 }
 
 int main() {
-	std::thread* th[thread_num];
-	for (int i = 0; i < thread_num; i++) {
-		th[i] = new std::thread(sendMsg, i);
-		th[i]->detach();
+	for (int i = 0; i < CLIENT_COUNT; i++) {
+		clients[i] = new Client("127.0.0.1", 6811);
+		clients[i]->doThread();
 	}
 
 	while (true) {
-		timeMsg();
-		Sleep(100);
+		printInfo();
+		std::chrono::microseconds t(1);
+		std::this_thread::sleep_for(t);
 	}
-	system("pause");
 	return 0;
 }

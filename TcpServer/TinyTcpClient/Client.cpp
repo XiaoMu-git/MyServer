@@ -12,7 +12,6 @@ Client::Client() {
 	_socket = INVALID_SOCKET;
 	_data_len = 0;
 	_msg_num = 0;
-	_uid = -1;
 	_is_connect = false;
 }
 
@@ -50,8 +49,7 @@ bool Client::doConnect(const char* ip, unsigned short port) {
 // 发送消息
 bool Client::doSend(Header* header) {
 	if (isRun() && header) {
-		header->_uid = _uid;
-		int ret = send(_socket, (const char*)header, header->_length, 0);
+		int ret = send(_socket, (const char*)header, header->_size, 0);
 		return ret > 0;
 	}
 	return false;
@@ -69,10 +67,10 @@ bool Client::doRecv() {
 	cout << "[" << ++_msg_num << "]收到服务器消息，消息长度为：" << len << endl;
 	while (_data_len >= sizeof(Header)) {
 		Header* header = (Header*)buffer;
-		if (_data_len >= header->_length) {
-			_data_len -= header->_length;
+		if (_data_len >= header->_size) {
+			_data_len -= header->_size;
 			processMsg(header);
-			memcpy(buffer, buffer + header->_length, _data_len);
+			memcpy(buffer, buffer + header->_size, _data_len);
 		}
 		else break;
 	}
@@ -134,11 +132,6 @@ char* Client::Username(const char* username) {
 char* Client::Password(const char* password) {
 	if (password != NULL) strcpy(_password, password);
 	return _password;
-}
-
-long long Client::Uid(long long uid) {
-	if (uid != -1) _uid = uid;
-	return _uid;
 }
 
 bool Client::isConnect(int is_connect) {

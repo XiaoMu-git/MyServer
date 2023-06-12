@@ -15,40 +15,34 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ComputeCore.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="HighTimer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
+    <ClCompile Include="Main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DataType.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HighTimer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeCore.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="Server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="DataType.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="SendCore.h">
+    <ClInclude Include="HighTimer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="ComputeCore.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="HighTimer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Server.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="DataType.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="SendCore.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
+    <ClInclude Include="ComputeCore.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

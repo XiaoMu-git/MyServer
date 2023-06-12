@@ -144,11 +144,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Allocter.cpp" />
+    <ClCompile Include="HighTimer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Allocter.h" />
+    <ClInclude Include="HighTimer.h" />
     <ClInclude Include="MemoryPool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

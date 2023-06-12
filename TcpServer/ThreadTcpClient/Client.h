@@ -6,27 +6,25 @@
 
 class Client {
 private:
-	SOCKET _socket;
-	char* _recv_buff;
-	char* _send_buff;
 	int _recv_pos, _send_pos;
-	bool _connect;
-
-public:
-	Client();
+	char* _recv_buff, * _send_buff;
+	char _ip[10];
+	unsigned short _port;
+	SOCKET _socket;
+	std::thread* _thread;
 
 	// 初始化 socket
 	bool initSocket();
 
 	// 连接服务器
-	bool doConnect(const char* ip, unsigned short port);
+	bool doConnect();
 
 	// 发送消息
 	void doSend(Header* header);
 
 	// 接收消息
 	int doRecv();
-	
+
 	// 处理消息
 	void doDispose(Header* header);
 
@@ -39,11 +37,14 @@ public:
 	// 关闭客户端
 	void doClose();
 
-	// _socket 接口
-	SOCKET Socket(const SOCKET socket = -1);
+public:
+	int _recv_count, _recv_pkg;
+	int _send_count, _send_pkg;
 
-	// _connect 接口
-	bool Connect(int connect = -1);
+	Client(const char ip[], unsigned short port);
+
+	// 启动线程
+	void doThread();
 
 	~Client();
 };

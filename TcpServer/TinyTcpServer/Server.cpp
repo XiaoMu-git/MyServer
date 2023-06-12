@@ -143,7 +143,7 @@ bool Server::Run(timeval time_val) {
 
 		// 删除断开连接的客户端
 		for (auto client : _clients) {
-			if (FD_ISSET(client->_socket, &fd_reads) && !doRecv(findClient(client->_socket))) {
+			if (FD_ISSET(client->_socket, &fd_reads) && !doRecv(client)) {
 				for (auto it = _clients.begin(); it != _clients.end(); it++) {
 					if ((*it)->_socket == client->_socket) {
 						// cout << "客户端<socket = " << client->_socket << ">与服务器断开连接" << endl;
