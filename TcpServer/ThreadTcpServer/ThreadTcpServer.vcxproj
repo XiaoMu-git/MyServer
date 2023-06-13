@@ -23,12 +23,14 @@
     <ClCompile Include="DataType.cpp" />
     <ClCompile Include="HighTimer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TaskCore.cpp" />
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ComputeCore.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="HighTimer.h" />
+    <ClInclude Include="TaskCore.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

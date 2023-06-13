@@ -10,9 +10,8 @@ ComputeCore::~ComputeCore() {
 }
 
 void ComputeCore::doSend(ClientPtr& client, HeaderPtr& header) {
-	if (isRun() && header.get()) {
-		int ret = send(client->_socket, (const char*)header.get(), header->_size, 0);
-	}
+	TaskPtr task = std::make_shared<SendTask>(client, header);
+	_task_core.addTask(task);
 }
 
 int ComputeCore::doRecv(ClientPtr& client) {
@@ -42,6 +41,7 @@ void ComputeCore::doWork() {
 	timeval time_val = { 0, 10 };
 	SOCKET max_socket = _socket;
 	fd_set fd_back, fd_reads;
+	_task_core.Thread();
 	while (isRun()) {
 		if (!_clients_buff.empty()) {
 			std::lock_guard<std::mutex> lock(_mutex);

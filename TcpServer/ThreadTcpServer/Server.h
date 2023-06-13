@@ -4,8 +4,6 @@
 #include "DataType.h"
 #include "ComputeCore.h"
 
-typedef std::shared_ptr<Client> ClientPtr;
-typedef std::shared_ptr<Header> HeaderPtr;
 typedef std::shared_ptr<ComputeCore> ComputeCorePtr;
 class Server {
 private:

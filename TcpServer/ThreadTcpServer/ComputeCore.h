@@ -2,13 +2,13 @@
 #define _ComputeCore_h_
 
 #include "DataType.h"
+#include "TaskCore.h"
 
-typedef std::shared_ptr<Client> ClientPtr;
-typedef std::shared_ptr<Header> HeaderPtr;
 class ComputeCore {
 private:
 	bool _is_change;
 	SOCKET _socket;
+	TaskCore _task_core;
 	std::mutex _mutex;
 	std::thread _thread;
 	std::vector<ClientPtr> _clients, _clients_buff;

@@ -27,6 +27,7 @@
 #include <memory>
 #include <chrono>
 #include <mutex>
+#include <list>
 
 enum CMD {
 	CMD_ERROR,
@@ -71,6 +72,24 @@ public:
 	Client(SOCKET socket);
 
 	~Client();
+};
+
+typedef std::shared_ptr<Client> ClientPtr;
+typedef std::shared_ptr<Header> HeaderPtr;
+class Task {
+public:
+	virtual void doTask() = 0;
+};
+
+class SendTask : public Task {
+private:
+	ClientPtr _client;
+	HeaderPtr _header;
+
+public:
+	SendTask(ClientPtr& client, HeaderPtr& header);
+
+	void doTask() override;
 };
 
 #endif // !_DataType_h_
