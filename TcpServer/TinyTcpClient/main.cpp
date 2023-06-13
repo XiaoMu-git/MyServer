@@ -1,6 +1,6 @@
 #include "Client.h"
 
-const int N = 512;
+const int N = 1024;
 
 int main() {
 	Client* client[N];

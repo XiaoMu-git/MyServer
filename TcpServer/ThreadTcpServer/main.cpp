@@ -1,14 +1,15 @@
 #include "Server.h"
 #include "HighTimer.h"
 
-HighTimer timer;
-Server server("127.0.0.1", 6811);
+HighTimer timer; 
+Server server("127.0.0.1", 6811, 1);
 
 void printInfo() {
 	if (timer.getSec() > 1.0f) {
 		timer.upData();
-		printf("client<%d>, recv_count<%d>, recv_pkg<%d>, send_count<%d>, send_pkg<%d>\n", server.clientCount(), (int)server._recv_count, (int)server._recv_pkg, (int)server._send_count, (int)server._send_pkg);
-		server._recv_count = server._recv_pkg = server._send_count = server._send_pkg = 0;
+		auto recv = server.recvCount();
+		auto send = server.sendCount();
+		printf("client<%d>, recv_count<%d>, recv_pkg<%d>, send_count<%d>, send_pkg<%d>\n", server.clientCount(), recv.first, recv.second, send.first, send.second);
 	}
 }
 

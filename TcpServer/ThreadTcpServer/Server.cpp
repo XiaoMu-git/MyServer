@@ -1,6 +1,6 @@
 #include "Server.h"
 
-Server::Server(const char* ip, unsigned short port) {
+Server::Server(const char* ip, unsigned short port, int core_count) {
 #ifdef _WIN32
 	WORD ver = MAKEWORD(2, 2);
 	WSADATA dat;
@@ -10,8 +10,7 @@ Server::Server(const char* ip, unsigned short port) {
 	strcpy(_ip, ip); 
 	_port = port;
 	_socket = INVALID_SOCKET;
-	_recv_count = _recv_pkg = 0;
-	_send_count = _send_pkg = 0;
+	_core_count = core_count;
 }
 
 Server::~Server() {
@@ -60,7 +59,7 @@ void Server::doAccept() {
 #endif
 	if (temp != INVALID_SOCKET) {
 		ClientPtr client = std::make_shared<Client>(temp);
-		_clients.push_back(client);
+		shareClient(client);
 	}
 }
 
@@ -74,14 +73,12 @@ int Server::doRecv(ClientPtr& client) {
 	int len = (int)recv(client->_socket, client->_recv_buff + client->_recv_pos, RECV_BUFF_SIZE - client->_recv_pos, 0);
 	if (len > 0) {
 		client->_recv_pos += len;
-		_recv_count++;
 		while (client->_recv_pos >= sizeof(Header)) {
 			Header* header = (Header*)client->_recv_buff;
 			if (client->_recv_pos >= header->_size) {
 				client->_recv_pos -= header->_size;
 				processMsg(client, header);
 				memcpy(client->_recv_buff, client->_recv_buff + header->_size, client->_recv_pos);
-				_recv_pkg++;
 			}
 			else break;
 		}
@@ -111,37 +108,32 @@ void Server::doWork() {
 		return;
 	}
 
+	for (int i = 0; i < _core_count; i++) {
+		ComputeCorePtr temp = std::make_shared<ComputeCore>(_socket);
+		temp->doThread();
+		_compute_cores.push_back(temp);
+	}
+
 	while (isRun()) {
 		fd_set fd_reads;
 		FD_ZERO(&fd_reads);
 		FD_SET(_socket, &fd_reads);
-
-		SOCKET max_socket = _socket;
-		for (auto client : _clients) {
-			FD_SET(client->_socket, &fd_reads);
-			max_socket = max(max_socket, client->_socket);
-		}
-		int ret = select(max_socket + 1, &fd_reads, NULL, NULL, &time_val);
+		int ret = select(_socket + 1, &fd_reads, nullptr, nullptr, &time_val);
 		if (ret < 0) return;
 
 		if (FD_ISSET(_socket, &fd_reads)) {
 			FD_CLR(_socket, &fd_reads);
 			doAccept();
-			continue;
-		}
-
-		for (auto client : _clients) {
-			if (client == nullptr) continue;
-			if (FD_ISSET(client->_socket, &fd_reads) && doRecv(client) < 0) {
-				for (auto it = _clients.begin(); it != _clients.end(); it++) {
-					if ((*it)->_socket == client->_socket) {
-						_clients.erase(it);
-						break;
-					}
-				}
-			}
 		}
 	}
+}
+
+void Server::shareClient(ClientPtr& client) {
+	ComputeCorePtr max_core = nullptr;
+	for (auto core : _compute_cores) {
+		if (max_core == nullptr || core->clientCount() < max_core->clientCount()) max_core = core;
+	}
+	if (max_core != nullptr) max_core->addClient(client);
 }
 
 void Server::doThread() {
@@ -156,21 +148,34 @@ bool Server::isRun() {
 void Server::doClose() {
 	if (isRun()) {
 #ifdef _WIN32
-		for (auto client : _clients) {
-			closesocket(client->_socket);
-		}
 		closesocket(_socket);
 #else
-		for (auto client : _clients) {
-			close(client->_socket);
-		}
 		close(_socket);
 #endif
-		_clients.clear();
 		_socket = INVALID_SOCKET;
 	}
 }
 
 size_t Server::clientCount() {
-	return _clients.size();
+	size_t clientCount = 0;
+	for (auto core : _compute_cores) clientCount += core->clientCount();
+	return clientCount;
+}
+
+std::pair<int, int> Server::recvCount() {
+	std::pair<int, int> res = { 0,0 };
+	for (auto core : _compute_cores) {
+		res.first += (int)core->_recv_count; core->_recv_count = 0;
+		res.second += (int)core->_recv_pkg; core->_recv_pkg = 0;
+	}
+	return res;
+}
+
+std::pair<int, int> Server::sendCount() {
+	std::pair<int, int> res = { 0,0 };
+	for (auto core : _compute_cores) {
+		res.first += (int)core->_send_count; core->_send_count = 0;
+		res.second += (int)core->_send_pkg; core->_send_pkg = 0;
+	}
+	return res;
 }

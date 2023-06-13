@@ -26,6 +26,7 @@
 #include <thread>
 #include <memory>
 #include <chrono>
+#include <mutex>
 
 enum CMD {
 	CMD_ERROR,

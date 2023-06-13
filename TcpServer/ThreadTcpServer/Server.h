@@ -2,16 +2,19 @@
 #define _Server_h_
 
 #include "DataType.h"
+#include "ComputeCore.h"
 
 typedef std::shared_ptr<Client> ClientPtr;
 typedef std::shared_ptr<Header> HeaderPtr;
+typedef std::shared_ptr<ComputeCore> ComputeCorePtr;
 class Server {
 private:
+	int _core_count;
 	char* _ip;
 	unsigned short _port;
 	SOCKET _socket;
 	std::thread _thread;
-	std::vector<ClientPtr> _clients;
+	std::vector<ComputeCorePtr> _compute_cores;
 
 protected:
 	bool initSocket();
@@ -30,11 +33,10 @@ protected:
 
 	void doWork();
 
-public:
-	std::atomic_int _recv_count, _recv_pkg;
-	std::atomic_int _send_count, _send_pkg;
+	void shareClient(ClientPtr& client);
 
-	Server(const char* ip, unsigned short port);
+public:
+	Server(const char* ip, unsigned short port, int core);
 
 	~Server();
 
@@ -45,6 +47,10 @@ public:
 	void doThread();
 
 	size_t clientCount();
+
+	std::pair<int, int> recvCount();
+
+	std::pair<int, int> sendCount();
 };
 
 #endif // !_Server_h_
