@@ -96,7 +96,8 @@ void Client::doDispose(Header* header) {
 // 运行函数
 void Client::doRun() {
 	timeval time_val = { 0, 0 };
-	Message* msg = new Message();
+	UserInfo* user_info = new UserInfo();
+	strcpy(user_info->userName, "xiaomu");
 	if (!initSocket()) printf("初始化socket失败...\n");
 	if (!doConnect()) printf("建立连接失败...\n");
 
@@ -112,7 +113,7 @@ void Client::doRun() {
 			FD_CLR(_socket, &fd_reads);
 			if (doRecv() < 0) return;
 		}
-		doSend(msg);
+		doSend(user_info);
 	}
 }
 

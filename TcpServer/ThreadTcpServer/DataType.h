@@ -18,8 +18,8 @@
 #define SOCKET_ERROR            (-1)
 #endif
 
-#define RECV_BUFF_SIZE 40690
-#define SEND_BUFF_SIZE 40960
+#define RECV_BUFF_SIZE 10240
+#define SEND_BUFF_SIZE 10240
 #include <functional>
 #include <vector>
 #include <atomic>

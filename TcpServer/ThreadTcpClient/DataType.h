@@ -10,7 +10,6 @@
 #include <unistd.h> 
 #include <arpa/inet.h>
 #include <string.h>
-
 #define SOCKET int
 #define INVALID_SOCKET  (SOCKET)(~0)
 #define SOCKET_ERROR            (-1)
@@ -18,7 +17,6 @@
 
 #define RECV_BUFF_SIZE 10240
 #define SEND_BUFF_SIZE 10240
-#define MESSAGE_SIZE 256
 
 #include <functional>
 #include <thread>
@@ -27,34 +25,41 @@
 
 enum CMD {
 	CMD_ERROR,
-	CMD_MESSAGE,
-	CMD_NULL
+	CMD_LOGIN,
+	CMD_LOGIN_RESULT,
+	CMD_LOGOUT,
+	CMD_LOGOUT_RESULT
 };
 
 class Header {
 public:
-	short _size, _type;
+	short _type;
+	short _size;
 
 	Header() {
 		_type = CMD_ERROR;
 		_size = sizeof(Header);
 	}
-
-	virtual ~Header() {}
 };
 
-class Message : public Header {
+class UserInfo : public Header {
 public:
-	char* msg;
+	char userName[32];
+	char passWord[32];
 
-	Message() {
-		_type = CMD_MESSAGE;
-		msg = new char[MESSAGE_SIZE];
-		_size = sizeof(Message) + MESSAGE_SIZE;
+	UserInfo() {
+		_size = sizeof(UserInfo);
 	}
+};
 
-	virtual ~Message() {
-		delete msg;
+class Response : public Header {
+public:
+	short _result;
+	char _data[128];
+
+	Response() {
+		_result = false;
+		_size = sizeof(Response);
 	}
 };
 

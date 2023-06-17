@@ -42,10 +42,16 @@ public:
 
 class MemoryManager {
 private:
-	MemoryPoolTempLate<32, 1000> _mem32;
-	MemoryPoolTempLate<64, 1000> _mem64;
-	MemoryPoolTempLate<128, 1000> _mem128;
-	MemoryPoolTempLate<256, 1000> _mem256;
+	MemoryPoolTempLate<32, 100000> _mem32;
+	MemoryPoolTempLate<64, 100000> _mem64;
+	MemoryPoolTempLate<128, 100000> _mem128;
+	MemoryPoolTempLate<256, 100000> _mem256;
+	MemoryPoolTempLate<512, 100000> _mem512;
+	MemoryPoolTempLate<1024, 100000> _mem1024;
+	MemoryPoolTempLate<2048, 100000> _mem2048;
+	MemoryPoolTempLate<4096, 100000> _mem4096;
+	MemoryPoolTempLate<8192, 100000> _mem8192;
+	MemoryPoolTempLate<16384, 100000> _mem16384;
 	std::mutex _mutex;
 
 	MemoryManager();
@@ -59,5 +65,21 @@ public:
 
 	void ffree(void* ptr);
 };
+
+void* operator new (size_t size) {
+	return MemoryManager::instance().mmalloc(size);
+}
+
+void operator delete (void* ptr) {
+	MemoryManager::instance().ffree(ptr);
+}
+
+void* operator new[] (size_t size) {
+	return MemoryManager::instance().mmalloc(size);
+}
+
+void operator delete[](void* ptr) {
+	MemoryManager::instance().ffree(ptr);
+}
 
 #endif // !_MemoryPool_h_

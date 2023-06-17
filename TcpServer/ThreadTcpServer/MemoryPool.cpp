@@ -1,19 +1,4 @@
 #include "MemoryPool.h"
-void* operator new (size_t size) {
-	return MemoryManager::instance().mmalloc(size);
-}
-
-void operator delete (void* ptr) {
-	MemoryManager::instance().ffree(ptr);
-}
-
-void* operator new[](size_t size) {
-	return MemoryManager::instance().mmalloc(size);
-}
-
-void operator delete[](void* ptr) {
-	MemoryManager::instance().ffree(ptr);
-}
 
 MemoryPool::MemoryPool() {
 	_space = nullptr;
@@ -90,9 +75,15 @@ MemoryManager& MemoryManager::instance() {
 
 void* MemoryManager::mmalloc(size_t size) {
 	if (size < 32) return _mem32.mmalloc(size);
-	else if (size < 64) return _mem64.mmalloc(size);
-	else if (size < 128) return _mem128.mmalloc(size);
-	else if (size < 256) return _mem256.mmalloc(size);
+	else if (size <= 64) return _mem64.mmalloc(size);
+	else if (size <= 128) return _mem128.mmalloc(size);
+	else if (size <= 256) return _mem256.mmalloc(size);
+	else if (size <= 512) return _mem512.mmalloc(size);
+	else if (size <= 1024) return _mem1024.mmalloc(size);
+	else if (size <= 2048) return _mem2048.mmalloc(size);
+	else if (size <= 4096) return _mem4096.mmalloc(size);
+	else if (size <= 8192) return _mem8192.mmalloc(size);
+	else if (size <= 16384) return _mem16384.mmalloc(size);
 	else {
 		MemoryBlock* block_res = (MemoryBlock*)malloc(size + sizeof(MemoryBlock));
 		block_res->_id = -1;

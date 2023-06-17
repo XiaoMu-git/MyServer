@@ -23,6 +23,7 @@
     <ClCompile Include="DataType.cpp" />
     <ClCompile Include="HighTimer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="TaskCore.cpp" />
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="ComputeCore.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="HighTimer.h" />
+    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="TaskCore.h" />
     <ClInclude Include="Server.h" />
   </ItemGroup>
