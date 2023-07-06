@@ -33,9 +33,6 @@
     <ClCompile Include="TaskCore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryPool.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -51,9 +48,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="TaskCore.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

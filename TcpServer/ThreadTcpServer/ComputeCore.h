@@ -22,6 +22,8 @@ protected:
 
 	void doWork();
 
+	void checkTime();
+
 public:
 	std::atomic_int _recv_count, _recv_pkg;
 	std::atomic_int _send_count, _send_pkg;

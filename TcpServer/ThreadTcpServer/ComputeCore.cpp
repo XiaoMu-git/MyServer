@@ -38,7 +38,7 @@ void ComputeCore::processMsg(ClientPtr& client, Header* header) {
 }
 
 void ComputeCore::doWork() {
-	timeval time_val = { 0, 10 };
+	timeval time_val = { 0, 0 };
 	SOCKET max_socket = _socket;
 	fd_set fd_back, fd_reads;
 	_task_core.Thread();
@@ -69,6 +69,7 @@ void ComputeCore::doWork() {
 
 		for (auto client : _clients) {
 			if (client == nullptr) continue;
+			client->checkSend();
 			if (FD_ISSET(client->_socket, &fd_reads) && doRecv(client) < 0) {
 				for (auto it = _clients.begin(); it != _clients.end(); it++) {
 					if ((*it)->_socket == client->_socket) {

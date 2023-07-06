@@ -20,6 +20,9 @@
 
 #define RECV_BUFF_SIZE 10240
 #define SEND_BUFF_SIZE 10240
+#define SEND_BUFF_TIME 500
+
+#include "HighTimer.h"
 #include <functional>
 #include <vector>
 #include <atomic>
@@ -61,8 +64,10 @@ public:
 	Response();
 };
 
+typedef std::shared_ptr<Header> HeaderPtr;
 class Client {
 public:
+	HighTimer _timer;
 	SOCKET _socket;
 	char* _recv_buff, * _send_buff;
 	int _recv_pos, _send_pos;
@@ -71,11 +76,14 @@ public:
 
 	Client(SOCKET socket);
 
+	void doSend(HeaderPtr header);
+
+	void checkSend();
+
 	~Client();
 };
 
 typedef std::shared_ptr<Client> ClientPtr;
-typedef std::shared_ptr<Header> HeaderPtr;
 class Task {
 public:
 	virtual void doTask() = 0;
